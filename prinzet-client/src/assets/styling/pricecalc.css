@@ -1,0 +1,18 @@
+.full-screen-gradient {
+    min-height: 100vh;
+    background: linear-gradient(to top right, #60a5fa, #fda4af); /* from-blue-400 to-rose-300 */
+    display: flex;
+    flex-direction:column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.price-card {
+    max-width: 1500px; 
+    width: 100%;
+    background: white;
+    border-radius: 1rem; 
+    padding: 2rem;
+    box-shadow: 0 20px 80px 10px rgba(82, 0, 65, 0.08);
+}

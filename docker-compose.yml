@@ -1,0 +1,60 @@
+#version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: pass
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build: ./printzet-backend
+    container_name: printzet-backend
+    ports:
+      - "5020:5025"
+    environment:
+      - NODE_ENV=production
+      - PORT=5025
+      - DB_URI=mongodb+srv://printzetlabs:U6KKkCefwlSLq4Bh@cluster0.bbckhfv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      - JWT_SECRET=printEcom
+      - EMAIL_USER=printzetlabs@gmail.com
+      - EMAIL_PASS=djlw ujlo oyyy vuyt
+      - FRONTEND_URL=https://printzet.com
+      - RAZORPAY_KEY_ID=rzp_test_hRoX6xI3NZpP4x
+      - RAZORPAY_KEY_SECRET=GOW03sfbn9SqEDFDpHTJc99l
+      - CLOUDINARY_CLOUD_NAME=dygjpceyx
+      - CLOUDINARY_API_KEY=424995426514445
+      - CLOUDINARY_API_SECRET=mg1j7elt3_rBarvHfS0R7Cu1Dj8
+      - TWILIO_ACCOUNT_SID=.
+      - TWILIO_AUTH_TOKEN=.
+      - GOOGLE_CLIENT_ID=172602859774-mmfjh204g13oo38r51nqogsc5pvbqva9.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./prinzet-client
+      args:
+        # VITE_REACT_APP_BACKEND_BASEURL: http://localhost:5020
+        VITE_REACT_APP_GOOGLE_CLIENT_ID: 172602859774-mmfjh204g13oo38r51nqogsc5pvbqva9.apps.googleusercontent.com
+        VITE_REACT_APP_BACKEND_BASEURL: https://api.printzet.com
+    ports:
+      - "3020:82"
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
