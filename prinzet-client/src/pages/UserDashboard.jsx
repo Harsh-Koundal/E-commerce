@@ -1,12 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import AuthContext from "../context/AuthContext";
-import {
-  FiGrid,
-  FiUser,
-  FiFileText,
-  FiMessageCircle,
-  FiSettings,
-} from "react-icons/fi";
+import { FiGrid, FiUser, FiFileText, FiMessageCircle, FiSettings, FiMail, FiPhone, FiMapPin, FiSave, FiLock, FiCheckCircle, FiPackage, } from "react-icons/fi";
+import { motion } from "framer-motion";
 import {
   Edit3,
   Eye,
@@ -78,6 +73,15 @@ useEffect(() => {
   const [customizingOrder, setCustomizingOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [customOptions, setCustomOptions] = useState({});
+  const [trackingOrder, setTrackingOrder] = useState(null);
+  const orderStatus = [
+    "Order Placed",
+    "Processing",
+    "Shipped",
+    "Out for Delivery",
+    "Delivered",
+  ]
+
 
   const [addressList, setAddressList] = useState([]);
   const [newAddress, setNewAddress] = useState({
@@ -133,8 +137,8 @@ useEffect(() => {
         setUser({
           name: profileData.fullName || "User",
           email: profileData.email,
+          password: "",
           mobile: profileData.mobile || "",
-          id: profileData._id,
         });
 
         setEditData({
@@ -186,10 +190,9 @@ useEffect(() => {
             },
           }
         );
-
-        const data = res.data.data || [];
-        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setOrders(data);
+        console.log("orders :", res.data)
+        const ordersArray = res.data?.data || [];
+        setOrders(ordersArray);
       } catch (error) {
         console.error(
           "Error fetching orders:",
@@ -373,30 +376,15 @@ useEffect(() => {
     }
 
     try {
-      console.log("Deleting address at index:", index);
-      await deleteData(`/auth/user/address/${index}`);
-      toast.success("Address removed successfully!");
-
-      setAddressList((prev) => prev.filter((_, idx) => idx !== index));
-
-      try {
-        const updatedAddresses = await getData("/auth/user/address");
-        let addresses = [];
-        if (Array.isArray(updatedAddresses)) {
-          addresses = updatedAddresses;
-        } else if (
-          updatedAddresses?.data &&
-          Array.isArray(updatedAddresses.data)
-        ) {
-          addresses = updatedAddresses.data;
-        }
-        setAddressList(addresses);
-      } catch (fetchError) {
-        console.error(
-          "Error fetching updated addresses after delete:",
-          fetchError
-        );
-      }
+      await updateData("/auth/user/profile", editData);
+      toast.success("Profile updated successfully!");
+      setUser({
+        name: editData.fullName,
+        email: editData.email,
+        password: editData.password,
+        mobile: editData.mobile,
+      });
+      setEditingProfile(false);
     } catch (error) {
       console.error("Error deleting address:", error);
 
@@ -456,73 +444,205 @@ useEffect(() => {
   };
 
   const renderProfile = () => (
-    <div className="bg-gradient-to-br from-purple-50 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-          Profile Information
-        </h2>
-        <button
+    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-lg p-6 border border-pink-100 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-pink-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
+
+      <div className="flex items-center justify-between mb-8 relative z-10">
+        <div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-1">
+            Profile Information
+          </h2>
+          <p className="text-gray-600 text-sm">Manage your personal details</p>
+        </div>
+        <motion.button
           onClick={() => setEditingProfile(!editingProfile)}
-          className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg hover:opacity-90 transition"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl hover:opacity-90 transition-all duration-300"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {editingProfile ? <X size={16} /> : <Edit3 size={16} />}
-          {editingProfile ? "Cancel" : "Edit"}
-        </button>
+          {editingProfile ? <X size={18} /> : <Edit3 size={18} />}
+          {editingProfile ? "Cancel" : "Edit Profile"}
+        </motion.button>
       </div>
 
       {editingProfile ? (
-        <form onSubmit={handleProfileUpdate} className="space-y-5">
-          <input
-            type="text"
-            value={editData.fullName}
-            onChange={(e) =>
-              setEditData({ ...editData, fullName: e.target.value })
-            }
-            className="w-full px-4 py-2.5 border border-pink-200 rounded-xl bg-white/80 focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
-            placeholder="Full Name"
-            required
-          />
-          <input
-            type="email"
-            value={editData.email}
-            onChange={(e) =>
-              setEditData({ ...editData, email: e.target.value })
-            }
-            className="w-full px-4 py-2.5 border border-pink-200 rounded-xl bg-white/80 focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
-            placeholder="Email"
-            disabled
-            title="Email cannot be changed"
-          />
-          <input
-            type="tel"
-            value={editData.mobile || ""}
-            onChange={(e) =>
-              setEditData({ ...editData, mobile: e.target.value })
-            }
-            className="w-full px-4 py-2.5 border border-pink-200 rounded-xl bg-white/80 focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
-            placeholder="Mobile Number"
-          />
-          <button
+        <motion.form
+          onSubmit={handleProfileUpdate}
+          className="space-y-5 relative z-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={editData.name}
+                  onChange={(e) =>
+                    setEditData({ ...editData, name: e.target.value })
+                  }
+                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) =>
+                    setEditData({ ...editData, email: e.target.value })
+                  }
+                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
+                  placeholder="your.email@example.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Mobile Number
+              </label>
+              <div className="relative">
+                <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="tel"
+                  value={editData.mobile || ""}
+                  onChange={(e) =>
+                    setEditData({ ...editData, mobile: e.target.value })
+                  }
+                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+            </div>
+          </div>
+
+          <motion.button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg hover:opacity-90 transition-all"
+            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all duration-300 mt-6"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <Save size={16} />
+            <FiSave size={18} />
             Save Changes
-          </button>
-        </form>
+          </motion.button>
+        </motion.form>
       ) : (
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-blue-500 text-white flex items-center justify-center text-xl font-bold rounded-full">
-            {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+        <motion.div
+          className="relative z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-center gap-6 mb-8 pb-8 border-b border-pink-200">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg ring-4 ring-pink-100">
+                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-purple-50 flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">
+                {user?.name || "User"}
+              </h3>
+              <p className="text-gray-600">{user?.email || "No email"}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-lg font-semibold text-gray-700">
-              {user?.name || "User"}
-            </p>
-            <p className="text-gray-500">{user?.email || "No email"}</p>
-            {user?.mobile && <p className="text-gray-500">{user.mobile}</p>}
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              className="bg-white/60 backdrop-blur-sm border border-pink-200 rounded-2xl p-5 hover:border-pink-400 hover:shadow-md transition-all duration-300"
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <FiMail className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Email Address
+                  </p>
+                  <p className="text-gray-800 font-medium truncate">
+                    {user?.email || "No email"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div
+              className="bg-white/60 backdrop-blur-sm border border-pink-200 rounded-2xl p-5 hover:border-purple-400 hover:shadow-md transition-all duration-300"
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <FiPhone className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Mobile Number
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {user?.mobile || "Not provided"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div
+              className="bg-white/60 backdrop-blur-sm border border-pink-200 rounded-2xl p-5 hover:border-pink-400 hover:shadow-md transition-all duration-300"
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-400 to-rose-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <FiLock className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Password
+                  </p>
+                  <p className="text-gray-800 font-medium">••••••••</p>
+                </div>
+              </div>
+            </motion.div>
+            <motion.div
+              className="bg-white/60 backdrop-blur-sm border border-pink-200 rounded-2xl p-5 hover:border-emerald-400 hover:shadow-md transition-all duration-300"
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <FiMapPin className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Address
+                  </p>
+                  {addressList.length > 0 ? (
+                    <p className="text-gray-800 font-medium leading-relaxed">
+                      {addressList[addressList.length - 1].address}, {addressList[addressList.length - 1].city},{" "}
+                      {addressList[addressList.length - 1].state} - {addressList[addressList.length - 1].pincode}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 italic">No address added</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -540,30 +660,56 @@ useEffect(() => {
               className="border border-purple-200 rounded-2xl p-5 bg-white/90 shadow-lg hover:shadow-2xl transition-all duration-300"
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-gray-800">
-                    Order #{order.id}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {order.date ||
-                      new Date(order.createdAt).toLocaleDateString()}
-                  </p>
-                  <p>
-                    {order.items && Array.isArray(order.items)
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-gray-800 text-lg">
+                        Order #{order.orderId}
+                      </h3>
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${order.status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : order.status === "pending"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                      >
+                        {order.status?.toUpperCase() || "UNKNOWN"}
+                      </span>
+                    </div>
 
+                    <button
+                      className="px-5 py-3 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition cursor-pointer"
+                      onClick={() =>
+                        setTrackingOrder(
+                          trackingOrder === order._id ? null : order._id
+                        )
+                      }
+                    >
+                      {trackingOrder === order._id
+                        ? "Hide Tracking"
+                        : "Track Order"}
+                    </button>
+                  </div>
+
+                  <p className="text-gray-600 text-sm sm:text-base">
+                    {order.items && Array.isArray(order.items) && order.items.length > 0
                       ? order.items.map((i) => i.name || i).join(", ")
                       : order.subCategory || "Custom Print Order"}
                   </p>
+
                   <p className="font-bold text-gray-700 text-sm sm:text-base">
                     Order Date:{" "}
                     {order.createdAt
                       ? new Date(order.createdAt).toLocaleDateString()
                       : "Unknown"}
                   </p>
+
                   <p className="font-bold text-gray-700 text-sm sm:text-base">
                     Total: ₹{order.totalCost?.toFixed(2) || 0}
                   </p>
                 </div>
+
                 {/* Action Buttons */}
                 <div className="flex flex-wrap sm:flex-nowrap gap-2 justify-center sm:justify-end mt-2 sm:mt-0">
                   <button
@@ -594,6 +740,7 @@ useEffect(() => {
                   </button>
                 </div>
               </div>
+
               {/* Order Details */}
               {selectedOrder === order._id && (
                 <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200 shadow-inner">
@@ -606,9 +753,49 @@ useEffect(() => {
                     <p><strong>Printed Sides:</strong> {order.printedSides}</p>
                     <p><strong>Payment Method:</strong> {order.paymentMethod}</p>
                     <p><strong>Transaction:</strong> {order.transactionId}</p>
-                    <p><strong>Vendor:</strong> {order.vendor?.name || "N/A"}</p>
                   </div>
                 </div>
+              )}
+
+              {/* Track Order */}
+              {trackingOrder === order._id && (
+                <motion.div
+                  className="mt-6 p-4 bg-white rounded-xl border border-gray-200 shadow-inner"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h4 className="font-bold text-gray-800 mb-4">Order Tracking</h4>
+                  <ul className="relative border-l-2 border-gray-300 ml-4">
+                    {orderStatus.map((step, idx) => {
+                      const completed =
+                        order.status === "completed" ||
+                        (order.status === "pending" && idx < 2);
+                      return (
+                        <motion.li
+                          key={idx}
+                          className="mb-6 ml-4"
+                          initial={{ opacity: 0, x: -30 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                        >
+                          <span
+                            className={`absolute -left-4 w-8 h-8 flex items-center justify-center rounded-full text-white ${completed ? "bg-green-500" : "bg-gray-400"
+                              }`}
+                          >
+                            {completed ? <FiCheckCircle size={13} /> : <FiPackage size={13} />}
+                          </span>
+                          <h3
+                            className={`font-semibold pl-1.5 ${completed ? "text-gray-800" : "text-gray-500"
+                              }`}
+                          >
+                            {step}
+                          </h3>
+                        </motion.li>
+                      );
+                    })}
+                  </ul>
+                </motion.div>
               )}
             </div>
           ))}
@@ -621,6 +808,7 @@ useEffect(() => {
       )}
     </div>
   );
+
 
   const renderReorders = () => (
     <div className="bg-gradient-to-r from-pink-100 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
@@ -729,33 +917,14 @@ useEffect(() => {
           Settings
         </h2>
         <div className="mb-6 bg-white/80 border border-pink-100 rounded-xl p-4 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">
-            Manage Addresses
-          </h3>
-
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Address</h3>
           {addressList.length > 0 ? (
-            <div className="space-y-3 mb-4">
-              {addressList.map((addr, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center p-3 border rounded-lg bg-gray-50"
-                >
-                  <div>
-                    <p className="font-medium">{addr.address}</p>
-                    <p className="text-sm text-gray-600">
-                      {addr.city}, {addr.state} - {addr.pincode}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteAddress(idx)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                    title="Delete Address"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            <ul className="space-y-2">
+              <li className="p-3 border rounded-lg bg-gray-50">
+                {addressList[addressList.length - 1].address}, {addressList[addressList.length - 1].city}, {addressList[addressList.length - 1].state} - {addressList[addressList.length - 1].pincode}
+
+              </li>
+            </ul>
           ) : (
             <p className="text-gray-500 mb-4">No addresses added yet.</p>
           )}
@@ -808,12 +977,24 @@ useEffect(() => {
               onClick={handleAddAddress}
               className="w-full px-4 py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl shadow hover:opacity-90 transition font-medium"
             >
-              Add Address
+              Chnage Address
             </button>
           </div>
         </div>
 
-        {/* Logout Section */}
+        {/* Change Password*/}
+        <div className="text-right mt-2">
+          <button
+            onClick={() => {
+              window.location.href = "/forgot-password";
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200"
+          >
+            Reset Password
+          </button>
+        </div>
+
+        {/* Logout */}
         <div>
           <button
             onClick={() => {
@@ -884,12 +1065,10 @@ useEffect(() => {
         <nav className="flex justify-around md:flex-col w-full mt-3">
           <button
             onClick={() => setActivePage("profile")}
-            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${
-              activePage === "profile"
-                ? "bg-white/20 shadow-md"
-                : "hover:bg-white/10"
-            }`}
-
+            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${activePage === "profile"
+              ? "bg-white/20 shadow-md"
+              : "hover:bg-white/10"
+              }`}
           >
             <FiUser className="w-5 h-5 mr-0 md:mr-3" />
             <span className="hidden md:inline">Profile</span>
