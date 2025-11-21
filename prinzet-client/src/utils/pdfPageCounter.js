@@ -1,15 +1,15 @@
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
-import pdfjsVersion from "pdfjs-dist/package.json";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist/build/pdf";
 
-// ✅ Set workerSrc only once (match the installed version)
-GlobalWorkerOptions.workerSrc =
-  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion.version}/pdf.worker.min.js`;
-
+// Load worker with Vite's URL transform
+GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).toString();
 
 /**
  * Get total pages in a PDF file
- * @param {File|Blob} file - PDF file (from input or drag-drop)
- * @returns {Promise<number>} total pages
+ * @param {File} file
+ * @returns {Promise<number>}
  */
 export async function getPdfPageCount(file) {
   if (!file) throw new Error("No file provided");
