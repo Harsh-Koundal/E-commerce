@@ -16,9 +16,11 @@ const VerifyEmail = () => {
         if (location.pathname.includes("vendor")) {
           // Vendor verification
           endpoint = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/verify-email/${token}`;
+          navigate('/email-verified')
         } else {
           // Normal user verification
           endpoint = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/auth/verify-email/${token}`;
+          navigate('/email-verified')
         }
 
         const response = await axios.get(endpoint);
