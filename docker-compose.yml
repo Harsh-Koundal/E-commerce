@@ -38,8 +38,8 @@ services:
       - CLOUDINARY_API_SECRET=mg1j7elt3_rBarvHfS0R7Cu1Dj8
       - TWILIO_ACCOUNT_SID=.
       - TWILIO_AUTH_TOKEN=.
-      - GOOGLE_CLIENT_ID=172602859774-mmfjh204g13oo38r51nqogsc5pvbqva9.apps.googleusercontent.com
-      - GOOGLE_CLIENT_SECRET=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
+      # - GOOGLE_CLIENT_ID=172602859774-mmfjh204g13oo38r51nqogsc5pvbqva9.apps.googleusercontent.com
+      # - GOOGLE_CLIENT_SECRET=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
     depends_on:
       mongodb:
         condition: service_healthy
@@ -49,7 +49,7 @@ services:
       context: ./prinzet-client
       args:
         # VITE_REACT_APP_BACKEND_BASEURL: http://localhost:5020
-        VITE_REACT_APP_GOOGLE_CLIENT_ID: 172602859774-mmfjh204g13oo38r51nqogsc5pvbqva9.apps.googleusercontent.com
+        # VITE_REACT_APP_GOOGLE_CLIENT_ID: 172602859774-mmfjh204g13oo38r51nqogsc5pvbqva9.apps.googleusercontent.com
         VITE_REACT_APP_BACKEND_BASEURL: https://api.printzet.com
     ports:
       - "3020:82"
