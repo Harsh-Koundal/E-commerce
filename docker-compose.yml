@@ -39,7 +39,7 @@ services:
       - TWILIO_ACCOUNT_SID=.
       - TWILIO_AUTH_TOKEN=.
       # - GOOGLE_CLIENT_ID=172602859774-mmfjh204g13oo38r51nqffogsc5pvbqva9.apps.googleusercontent.com
-      # - GOOGLE_CLIENT_SECRET=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
+      # - GOOGLE_CLIENT_SECRET=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vMNS
     depends_on:
       mongodb:
         condition: service_healthy
