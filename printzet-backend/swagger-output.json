@@ -847,6 +847,16 @@
         }
       }
     },
+    "/api/accessorycategories/clothing-printing": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/orders/history": {
       "get": {
         "description": "",
@@ -5198,6 +5208,16 @@
       }
     },
     "/accessory-printing": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/clothing-printing": {
       "get": {
         "description": "",
         "responses": {
