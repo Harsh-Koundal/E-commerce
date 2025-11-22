@@ -279,9 +279,124 @@ const accessoryCategories = [
                 availableSizes: ['Small', 'Medium'],
                 availableColors: ['Natural', 'Black'],
             },
+            
         ],
     },
 ];
+const clothingCategories = [
+  {
+    id: "clothing-printing",
+    name: "Clothing Printing",
+    image:
+      "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812460/clothing-head_kjnvop.png",
+    description:
+      "Transform everyday items into unique expressions of your personality or brand. From custom t-shirts to premium caps and bags—perfect for events, branding, gifting, and personal use.",
+    cost: 599,
+
+    subcategories: [
+      {
+        id: "polo-tshirt-printing",
+        name: "Polo T-shirts",
+        description:
+          "Smart and comfortable polo T-shirts with custom printing.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812519/polo-t-shirt_xxbtzd.png",
+        material: "Cotton",
+        sizeOptions: ["S", "M", "L", "XL"],
+        colorOptions: ["Red", "Blue", "White"],
+        customizationOptions: "Logo placement, text input",
+        baseCost: 350,
+        customizationCosts: { logo: 50, text: 20 },
+        availableSizes: ["S", "M", "L", "XL"],
+        availableColors: ["Red", "Blue", "White"],
+      },
+
+      {
+        id: "casual-tshirt-printing",
+        name: "Casual T-shirts",
+        description: "Everyday casual T-shirts with custom prints.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812456/casual-t-shirt_shkycv.png",
+        material: "Cotton",
+        sizeOptions: ["S", "M", "L", "XL", "XXL"],
+        colorOptions: ["Black", "White", "Gray", "Navy"],
+        customizationOptions: "Full print, front print, back print",
+        baseCost: 250,
+        customizationCosts: { full: 60, front: 30, back: 30 },
+        availableSizes: ["S", "M", "L", "XL", "XXL"],
+        availableColors: ["Black", "White", "Gray", "Navy"],
+      },
+
+      {
+        id: "anime-tshirt-printing",
+        name: "Anime Printed T-shirts",
+        description: "Trending anime design T-shirts.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812451/anime-t-shirt_griefc.png",
+        material: "Cotton",
+        sizeOptions: ["S", "M", "L", "XL"],
+        colorOptions: ["Black", "White"],
+        customizationOptions: "Front print, back print",
+        baseCost: 450,
+        customizationCosts: { front: 0, back: 0 },
+        availableSizes: ["S", "M", "L", "XL"],
+        availableColors: ["Black", "White"],
+      },
+
+      {
+        id: "custom-cap-printing",
+        name: "Custom Printed Caps",
+        description:
+          "Stylish caps with embroidered or printed designs.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812454/cap_fqjggb.png",
+        material: "Cotton, Polyester",
+        sizeOptions: ["Free Size"],
+        colorOptions: ["Black", "White", "Red", "Blue"],
+        customizationOptions: "Embroidery, print",
+        baseCost: 200,
+        customizationCosts: { embroidery: 50, print: 30 },
+        availableSizes: ["Free Size"],
+        availableColors: ["Black", "White", "Red", "Blue"],
+      },
+
+      {
+        id: "backpack-printing",
+        name: "Backpacks",
+        description: "Durable backpacks with custom branding.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812447/backpacks_mwevq2.png",
+        material: "Canvas, Polyester",
+        sizeOptions: ["Small", "Large"],
+        colorOptions: ["Black", "Gray", "Navy"],
+        customizationOptions: "Print, embroidery",
+        baseCost: 600,
+        customizationCosts: { print: 80, embroidery: 120 },
+        availableSizes: ["Small", "Large"],
+        availableColors: ["Black", "Gray", "Navy"],
+      },
+
+      {
+        id: "cotton-bag-printing",
+        name: "Cotton/Tote Bags",
+        description:
+          "Eco-friendly cotton tote bags for branding or gifting.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812451/bags_xnxrsl.png",
+        material: "Cotton",
+        sizeOptions: ["Small", "Medium", "Large"],
+        colorOptions: ["Natural", "Black", "Navy"],
+        customizationOptions: "Print, embroidery",
+        baseCost: 100,
+        customizationCosts: { print: 30, embroidery: 50 },
+        availableSizes: ["Small", "Medium", "Large"],
+        availableColors: ["Natural", "Black", "Navy"],
+      },
+    ],
+  },
+];
+
+
 
 const seedDB = async () => {
     try {
@@ -296,6 +411,9 @@ const seedDB = async () => {
 
         await AccessoryCategory.insertMany(accessoryCategories);
         console.log('Accessory categories seeded successfully!');
+
+        await AccessoryCategory.insertMany(clothingCategories);
+        console.log('Clothing categories seeded successfully!');
 
         mongoose.connection.close();
     } catch (error) {
