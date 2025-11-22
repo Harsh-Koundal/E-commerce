@@ -20,8 +20,6 @@ const Header = () => {
   );
 const [vendorName, setVendorName] = useState(() => {
   const raw = localStorage.getItem("vendorInfo");
-  console.log("🔥 vendorInfo RAW VALUE:", raw);
-  if (!raw || raw === "undefined" || raw === "null") return "";
   try {
     const parsed = JSON.parse(raw);
     return parsed?.pressName || "";
