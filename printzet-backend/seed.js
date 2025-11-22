@@ -1016,7 +1016,7 @@ const contactCardCategories = [
         description:
           "Premium business cards with luxury finishes for impactful branding.",
         image:
-          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812554/visiting-card_mxtrmz.png",
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812452/business-card_uaw76c.png",
         material: "350gsm | Matte | Velvet Touch | Glossy",
         sizeOptions: ["Standard"],
         colorOptions: ["Full Color"],
