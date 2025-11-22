@@ -23,6 +23,7 @@ export default function PosterSignsMousepads() {
         );
 
         setSubCategories(response.data?.data?.subcategories || []);
+        console.log(response)
       } catch (err) {
         console.error("Error fetching poster categories:", err);
       }

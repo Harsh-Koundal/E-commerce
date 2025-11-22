@@ -137,7 +137,7 @@ const OrderPage = () => {
     const fetchCategory = async () => {
       try {
         const res = await axios.get(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/categories/${categoryId}`
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/accessorycategories/${categoryId}`
         );
         setCategory(res.data.data);
       } catch (error) {
