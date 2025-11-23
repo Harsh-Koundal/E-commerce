@@ -173,6 +173,123 @@ const categories = [
     },
 ];
 
+const documentsCategories = [
+  {
+    id: "documents-printing",
+    name: "Documents",
+    image:
+      "https://res.cloudinary.com/di3caz3zz/image/upload/v1744897701/documents-header.png",
+    description:
+      "High-quality document printing including certificates, business cards, brochures, letterheads, and notebooks. Perfect for office, academic, and business needs.",
+
+    subcategories: [
+
+      // -------------------------------- DOCUMENTS --------------------------------
+      {
+        id: "document-printing",
+        name: "Documents",
+        description:
+          "Everyday document printing with crisp black & white or color output.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812465/documents-image_buojab.png",
+        material: "75–130 GSM",
+        customizationOptions: "Black & white, color, single/both side",
+        baseCost: 1.5,
+        customizationCosts: {
+          "75gsm": { bw: 1.5, color: 5 },
+          "100gsm": { bw: 2.5, color: 7 },
+          "130gsm": { bw: 3.5, color: 10 },
+        },
+      },
+      
+      // -------------------------------- CERTIFICATES --------------------------------
+      {
+        id: "certificates-printing",
+        name: "Certificates",
+        description:
+          "High-quality certificates for academic, corporate, and award recognition.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812459/certificate-image_c8kuj7.png",
+        material: "170–250 GSM Art Paper",
+        customizationOptions: "Full-color print, signatures, seals",
+        baseCost: 15,
+        customizationCosts: { normal: 15, premium: 25, a3: 40 },
+      },
+
+      // -------------------------------- NOTEBOOKS --------------------------------
+      {
+        id: "notebook-printing",
+        name: "Notebooks",
+        description:
+          "Custom notebooks for schools, offices, events, and businesses.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812510/notebooks-image_u3jrex.png",
+        material: "Softcover / Hardcover",
+        customizationOptions: "Logo, name, cover design",
+        baseCost: 50,
+        customizationCosts: {
+          softA5: 50,
+          softA4: 80,
+          hardA5: 90,
+          hardA4: 120,
+        },
+      },
+
+      // -------------------------------- BROCHURES --------------------------------
+      {
+        id: "brochure-printing",
+        name: "Brochures & Booklets",
+        description:
+          "Marketing brochures and booklets in various sizes and fold options.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812452/brochures-image_kt3k0c.png",
+        material: "130–170 GSM Gloss / Matte",
+        customizationOptions: "Single-sided, double-sided, full-color",
+        baseCost: 8,
+        customizationCosts: {
+          a4_single: 8,
+          a4_double: 12,
+          a3_single: 12,
+          a3_double: 18,
+        },
+      },
+
+      // -------------------------------- BUSINESS CARDS --------------------------------
+      {
+        id: "visiting-card-printing",
+        name: "Business Cards",
+        description: "Premium business cards for modern professionals.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812554/visiting-card_mxtrmz.png",
+        material: "300–350 GSM Art Card",
+        customizationOptions: "Matte, glossy, single or double side",
+        baseCost: 150,
+        customizationCosts: {
+          matte_single: 150,
+          matte_double: 200,
+          glossy_single: 180,
+          glossy_double: 250,
+        },
+      },
+
+      // -------------------------------- LETTERHEADS --------------------------------
+      {
+        id: "letterhead-printing",
+        name: "Letterheads",
+        description:
+          "Professional letterheads to elevate your brand identity.",
+        image:
+          "https://res.cloudinary.com/du6lwwaqq/image/upload/v1763812477/letterheads-image_yk0903.png",
+        material: "100–120 GSM Premium Bond Paper",
+        customizationOptions: "Full color print, watermark",
+        baseCost: 3,
+        customizationCosts: { standard: 3, premium: 6 },
+      },
+    ],
+  },
+];
+
+
 const accessoryCategories = [
     {
         id: 'accessory-printing',
@@ -1130,6 +1247,9 @@ const seedDB = async () => {
 
         await Category.insertMany(categories);
         console.log("Database Seeded Successfully!");
+
+        await AccessoryCategory.insertMany(documentsCategories);
+        console.log('Accessory categories seeded successfully!');
 
         await AccessoryCategory.insertMany(accessoryCategories);
         console.log('Accessory categories seeded successfully!');
