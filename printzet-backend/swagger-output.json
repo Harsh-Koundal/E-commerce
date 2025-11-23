@@ -961,9 +961,6 @@
       "post": {
         "description": "",
         "responses": {
-          "201": {
-            "description": "Created"
-          },
           "500": {
             "description": "Internal Server Error"
           }
@@ -974,37 +971,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "transactionId": {
-                    "example": "any"
-                  },
-                  "amount": {
-                    "example": "any"
-                  },
-                  "redirectUrl": {
-                    "example": "any"
-                  },
-                  "categoryId": {
-                    "example": "any"
-                  },
-                  "subCategory": {
-                    "example": "any"
-                  },
-                  "numCopies": {
-                    "example": "any"
-                  },
-                  "paperType": {
-                    "example": "any"
-                  },
-                  "binding": {
-                    "example": "any"
-                  },
-                  "lamination": {
-                    "example": "any"
-                  },
-                  "printedSides": {
-                    "example": "any"
-                  },
-                  "colorType": {
+                  "orders": {
                     "example": "any"
                   },
                   "customerDetails": {
@@ -1199,6 +1166,19 @@
         "responses": {
           "default": {
             "description": ""
+          }
+        }
+      }
+    },
+    "/api/orders/unassigned": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
@@ -4004,9 +3984,6 @@
       "post": {
         "description": "",
         "responses": {
-          "201": {
-            "description": "Created"
-          },
           "500": {
             "description": "Internal Server Error"
           },
@@ -4056,22 +4033,7 @@
                   "vendorId": {
                     "example": "any"
                   },
-                  "categoryId": {
-                    "example": "any"
-                  },
-                  "paperType": {
-                    "example": "any"
-                  },
-                  "binding": {
-                    "example": "any"
-                  },
-                  "lamination": {
-                    "example": "any"
-                  },
-                  "printedSides": {
-                    "example": "any"
-                  },
-                  "colorType": {
+                  "orders": {
                     "example": "any"
                   }
                 }
@@ -5546,6 +5508,19 @@
         "responses": {
           "default": {
             "description": ""
+          }
+        }
+      }
+    },
+    "/unassigned": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }

@@ -19,21 +19,6 @@ import cloudinary from "../config/cloudinaryConfig.js"
 
 dotenv.config();
 
-// // Cloudinary configuration
-// cloudinary.config({
-//     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-//     api_key: process.env.CLOUDINARY_API_KEY,
-//     api_secret: process.env.CLOUDINARY_API_SECRET,
-// });
-
-// const storage = new CloudinaryStorage({
-//     cloudinary,
-//     params: {
-//         folder: "orders",
-//         resource_type: "auto",
-//     },
-// });
-
 // Memory storage for processing files first
 const memoryStorage = multer({
     storage: multer.memoryStorage(),
@@ -62,7 +47,7 @@ const extractPageCount = async (buffer, mimetype, originalname) => {
         console.log(`Processing: ${originalname} (${mimetype})`);
 
         if (mimetype === "application/pdf") {
-            const data = await PDFParser(buffer);
+            const data = await pdf(buffer);
             const pageCount = data.numpages || 1;
             console.log(`PDF: ${originalname} → ${pageCount} pages`);
             return pageCount;
@@ -148,7 +133,7 @@ const getTotalPages = async (file) => {
         dataBuffer = Buffer.from(response.data);
 
         if (file.mimetype === "application/pdf") {
-            const data = await PDFParser(dataBuffer);
+            const data = await pdf(dataBuffer);
             return data.numpages || 1;
         }
 
@@ -177,7 +162,7 @@ const getTotalPages = async (file) => {
                 const dataBuffer = Buffer.from(response.data);
 
                 if (file.mimetype === "application/pdf") {
-                    const data = await PDFParser(dataBuffer);
+                    const data = await pdf(dataBuffer);
                     return data.numpages || 1;
                 }
 
@@ -376,132 +361,6 @@ const upload_files = async (req, res) => {
     });
 }
 
-const upload_file_legacy = async (req, res) => {
-    try {
-        // const files = req.files.map((file) => ({
-        //     url: file.path,
-        //     mimetype: file.mimetype,
-        //     public_id: file.filename,
-        // }));
-
-        // // let totalPages = 0;
-        // // for (const file of files) {
-        // //     totalPages += await getTotalPages(file);
-        // // }
-        // const totalfiles = files.length;
-        const files = await Promise.all(
-            req.files.map(async (file) => {
-                let pageCount = null;
-
-                //  If file is PDF, fetch from Cloudinary URL and count pages
-                if (file.mimetype === "application/pdf") {
-                    const response = await axios.get(file.path, { responseType: "arraybuffer" });
-                    const pdfData = await pdf(response.data);
-                    pageCount = pdfData.numpages || 0;
-                }
-
-                return {
-                    originalName: file.originalname, //  original name
-                    url: file.path,                  //  Cloudinary file URL
-                    pageCount,                       //  pages if PDF
-                };
-            })
-        );
-        sendResponse(res, 200, "Files uploaded and pages counted", "success", {
-            totalfiles: files.length,
-            files
-        })
-    } catch (error) {
-        console.error("Error processing file upload:", error);
-        sendResponse(res, 500, "Error processing file uploaded", null, error);
-    }
-}
-
-
-// const place_order= async(req, res)=>{
-//     memoryStorage.array("files")(req, res, async (uploadError) => {
-//         if (uploadError) {
-//             return sendResponse(res, 400, "File upload error", null, uploadError.message);
-//         }
-
-//         try {
-//             const { categoryId, subCategory, numCopies, paperType, binding, lamination, printedSides, colorType, customerDetails, vendorId } = req.body;
-
-//             if (typeof paperType !== 'string' || typeof binding !== 'string' || typeof lamination !== 'string' || typeof colorType !== 'string' || typeof printedSides !== 'string') {
-//                 return sendResponse(res, 400, "Invalid printing options");
-//             }
-
-//             if (!customerDetails || !customerDetails.name || !customerDetails.email || !customerDetails.phone || !customerDetails.address || !customerDetails.city || !customerDetails.state || !customerDetails.pincode) {
-//                 return sendResponse(res, 400, "Invalid customer details");
-//             }
-
-//             // if (!vendorId) {
-//             //     return sendResponse(res, 400, "Vendor ID is required");
-//             // }
-
-//             const processedFiles = [];
-//             let totalPages = 0;
-
-//             // Process files first, then upload
-//             for (const file of req.files) {
-//                 const pageCount = await extractPageCount(file.buffer, file.mimetype, file.originalname);
-//                 const uploadResult = await uploadToCloudinary(file.buffer, file.originalname, file.mimetype);
-
-//                 processedFiles.push({
-//                     url: uploadResult.secure_url,
-//                     mimetype: file.mimetype,
-//                     public_id: uploadResult.public_id,
-//                     originalname: file.originalname
-//                 });
-
-//                 totalPages += pageCount;
-//             }
-
-//             const totalCost = calculateCost(numCopies, totalPages, colorType, paperType, binding, lamination, printedSides, subCategory);
-//             const orderId = uuidv4();
-//             const transactionId = uuidv4();
-//             console.log("userId:", req.userId, "orderId:", orderId, "transactionId:", transactionId);
-//             const newOrder = new Order({
-//                 userId: req.userId,
-//                 categoryId,
-//                 subCategory,
-//                 numCopies,
-//                 colorType,
-//                 paperType,
-//                 binding,
-//                 lamination,
-//                 printedSides,
-//                 files: processedFiles,
-//                 totalPages,
-//                 totalCost,
-//                 customerDetails,
-//                 vendor: vendorId || null,
-//                 orderId,
-//                 transactionId,
-//                 paymentMethod: "UPI",
-//                 status: "pending"
-//             });
-
-//             await newOrder.save();
-
-//             req.body.transactionId = transactionId;
-//             req.body.amount = totalCost;
-//             req.body.redirectUrl = `${process.env.FRONTEND_URL}/payment-status`;
-
-//             await phonePeAuthMiddleware(req, res, async () => {
-//                 await newPayment(req, res);
-//             });
-
-//             await sendOrderConfirmationEmail(customerDetails.email, { id: newOrder._id, totalCost });
-
-//             res.status(201).json({ message: "Order placed successfully", orderId: newOrder._id, transactionId });
-
-//         } catch (error) {
-//             console.error("Error placing order:", error);
-//             sendResponse(res, 500, "Error placing order", null, error);
-//         }
-//     });
-// }
 const place_order = async (req, res) => {
     try {
         const { orders = [], customerDetails, vendorId } = req.body;
@@ -551,6 +410,7 @@ const place_order = async (req, res) => {
             }
 
             // Process files
+
             let totalPages = 0;
             const processedFiles = files.map(file => {
                 totalPages += file.pageCount || 0;
@@ -589,7 +449,7 @@ const place_order = async (req, res) => {
                 files: processedFiles,
                 totalPages,
                 totalCost,
-                customerDetails,
+                customerDetails: customerDetails,
                 vendor: vendorId || null,
                 orderId,
                 transactionId,
@@ -643,8 +503,31 @@ const place_order = async (req, res) => {
 
 const getOrder = async (req, res) => {
     try {
-        const orders = await Order.find({ userId: req.userId }).populate("categoryId");
-        sendResponse(res, 200, "Orders fetched successfully", "success", orders);
+
+        // Get the correct user ID (handle both regular and Google auth)
+        const userId = req.userId || req.user?.id;
+        
+        // First get all successful payment records for this user
+        const successfulPayments = await Payment.find({ 
+            userId: userId, 
+            paymentStatus: "SUCCESS" 
+        }).select("orderId");
+        
+        // Extract order IDs from successful payments
+        const paidOrderIds = successfulPayments.map(payment => payment.orderId);
+        
+        // Find orders that have successful payments
+        const orders = await Order.find({ 
+            userId: userId,
+            _id: { $in: paidOrderIds }
+        })
+            .populate("categoryId", "name description")
+            .populate("vendor", "name email phone address")
+            .populate("assignedAgent", "name phone")
+            .sort({ createdAt: -1 });
+        
+        sendResponse(res, 200, "Orders fetched successfully","success", orders);
+
     } catch (error) {
         sendResponse(res, 500, "Error fetching orders", null, error);
     }
@@ -653,11 +536,28 @@ const getOrder = async (req, res) => {
 
 const getSingleOrderById = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.orderId).populate("categoryId");
+        const order = await Order.findById(req.params.orderId)
+            .populate("categoryId", "name description")
+            .populate("vendor", "name email phone address")
+            .populate("assignedAgent", "name phone");
+        
         if (!order) {
             return sendResponse(res, 404, "Order not found");
         }
-        sendResponse(res, 200, "Order fetched", "success", order);
+
+        
+        // Check if the order has a successful payment
+        const payment = await Payment.findOne({ 
+            orderId: order._id, 
+            paymentStatus: "SUCCESS" 
+        });
+        
+        if (!payment) {
+            return sendResponse(res, 404, "Order not found or payment not completed");
+        }
+        
+        sendResponse(res, 200, "Order fetched","success", order);
+
     } catch (error) {
         sendResponse(res, 500, "Error fetching order", null, error);
     }
@@ -665,10 +565,30 @@ const getSingleOrderById = async (req, res) => {
 
 const orderController = {
     upload_files,
-    upload_file_legacy,
     place_order,
     getOrder,
     getSingleOrderById
 }
+//get  unassigned orders 
+export const getUnassignedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      assignedAgent: null,
+      status: "completed",
+    });
+
+    return res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error("Error fetching unassigned orders:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while fetching unassigned orders",
+    });
+  }
+};
+
 
 export default orderController;
