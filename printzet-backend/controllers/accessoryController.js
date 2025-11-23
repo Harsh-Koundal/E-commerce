@@ -1,29 +1,23 @@
 import AccessoryCategory from "../models/AccessoryCategory.js";
 import sendResponse from "../utils/sendResponse.js";
 
-const getAccessoryCategory = async (req, res) => {
+const getDocumentCategory = async (req, res) => {
     try {
-      const accessoryCategory = await AccessoryCategory.findOne({
-        id: "accessory-printing",
+      const documentCategory = await AccessoryCategory.findOne({
+        id: "documents-printing",
       });  
-      if (!accessoryCategory) {
+      if (!documentCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
-      return sendResponse(res, 200, "Accessory category fetched", "success", accessoryCategory);
+      return sendResponse(res, 200, "Accessory category fetched", "success", documentCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
 
-export { getAccessoryCategory };
+export { getDocumentCategory };
 
 const getClothingCategory = async (req, res) => {
     try {
@@ -32,17 +26,11 @@ const getClothingCategory = async (req, res) => {
       });  
       if (!clothingCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", clothingCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -56,17 +44,11 @@ const getStationeryCategories = async (req, res) => {
       });  
       if (!stationeryCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", stationeryCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -80,17 +62,11 @@ const getStampInkCategories = async (req, res) => {
       });  
       if (!stampsCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", stampsCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -105,17 +81,11 @@ const getPosterSignsCategories = async (req, res) => {
       });  
       if (!posterCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", posterCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -129,17 +99,11 @@ const getLabelStickerPackagingCategories = async (req, res) => {
       });  
       if (!posterCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", posterCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -153,17 +117,11 @@ const getMugsAlbumGiftCategories = async (req, res) => {
       });  
       if (!mugsCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", mugsCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -177,17 +135,11 @@ const getCustomDrinkwareCategories = async (req, res) => {
       });  
       if (!drinkwareCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", drinkwareCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }
@@ -201,17 +153,11 @@ const getContactCardCategories = async (req, res) => {
       });  
       if (!contactCategory) {
         console.log("Category not found!");
-        // return res.status(404).json({ message: "Accessory category not found" });
         return sendResponse(res, 404, "Accessory category not found", "error");
       }
-  
-      // res.json(accessoryCategory);
       return sendResponse(res, 200, "Accessory category fetched", "success", contactCategory);
     } catch (error) {
       console.error("Error fetching accessory category:", error);
-      // res
-      //   .status(500)
-      //   .json({ message: "Error fetching accessory category", error });
       return sendResponse(res, 500, "Error fetching accessory category", "error", error);
     }
 }

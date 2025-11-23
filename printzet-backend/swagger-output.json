@@ -837,7 +837,7 @@
         }
       }
     },
-    "/api/accessorycategories/accessory-printing": {
+    "/api/accessorycategories/document-printing": {
       "get": {
         "description": "",
         "responses": {
@@ -947,7 +947,7 @@
         }
       }
     },
-    "/api/orders/upload-files-legacy": {
+    "/api/orders/upload-files": {
       "post": {
         "description": "",
         "responses": {
@@ -5239,7 +5239,7 @@
         }
       }
     },
-    "/accessory-printing": {
+    "/document-printing": {
       "get": {
         "description": "",
         "responses": {
@@ -5341,16 +5341,6 @@
     },
     "/payments/history": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/upload-files-legacy": {
-      "post": {
         "description": "",
         "responses": {
           "default": {
