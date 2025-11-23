@@ -6,6 +6,7 @@ import axios from "axios";
 
 // Images
 import headerImage from "../assets/images/packaging.png";
+import BreadcrumbNavigation from "@/components/Breadcrumb-Navigation/BreadcrumbNavigation";
 
 export default function LabelStickersPackaging() {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export default function LabelStickersPackaging() {
 
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-md">
+        <BreadcrumbNavigation/>
         <div className="flex flex-col md:flex-row gap-6">
           <img
             src={headerImage}

@@ -6,6 +6,7 @@ import axios from "axios";
 
 // Local Image (header only)
 import headerImage from "../assets/images/poster-head.png";
+import BreadcrumbNavigation from "@/components/Breadcrumb-Navigation/BreadcrumbNavigation";
 
 export default function PosterSignsMousepads() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export default function PosterSignsMousepads() {
 
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-md">
+        <BreadcrumbNavigation/>
         <div className="flex flex-col md:flex-row gap-6">
           <img
             src={headerImage}
