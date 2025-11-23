@@ -275,7 +275,7 @@ const OrderPage = () => {
     }
   
     const res = await axios.post(
-      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/upload-files-legacy`,
+      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/upload-files`,
       formData,
       {
         headers: {
@@ -399,7 +399,7 @@ const OrderPage = () => {
       navigate("/checkout", { state: { orders } });
     } catch (error) {
       setError(error.message || "Failed to upload files.");
-      console.error(error);
+      console.error("Error",error.message);
     } finally {
       setUploading(false);
     }
