@@ -12,6 +12,7 @@ import {
   labelsImg,
   contactCards
 } from "@/assets/index.js";
+import BreadcrumbNavigation from "@/components/Breadcrumb-Navigation/BreadcrumbNavigation";
 
 export default function MugsAlbumGift() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ export default function MugsAlbumGift() {
     <div className="bg-gray-100 p-6 h-full">
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-md">
+        <BreadcrumbNavigation/>
         <div className="flex flex-col md:flex-row gap-6">
           <img
             src={headerImage}

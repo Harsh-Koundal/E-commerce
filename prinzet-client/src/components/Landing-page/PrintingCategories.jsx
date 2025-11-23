@@ -65,7 +65,7 @@ const categoriesTop = [
 ];
 
 const exploreCategories = [
-  { name: "Documents", img: documentImg, redirect: "/category/document-printing" },
+  { name: "Documents", img: documentImg, redirect: "/document-printing" },
   { name: "Stationery, Letterheads & Notebooks", img: stationeryImg, redirect: "/stationery" },
   { name: "Stamps & Inks", img: stampsImg, redirect: "/stamp-inks" },
   { name: "Posters & Signs", img: postersImg, redirect: "/posters" },

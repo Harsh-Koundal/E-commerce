@@ -6,6 +6,7 @@ import axios from "axios";
 
 // Header Image
 import headerImage from "../assets/images/stationery-head.png";
+import BreadcrumbNavigation from "@/components/Breadcrumb-Navigation/BreadcrumbNavigation";
 
 export default function Stationery() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export default function Stationery() {
       
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-md">
+        <BreadcrumbNavigation/>
         <div className="flex flex-col md:flex-row gap-6">
           <img
             src={headerImage}

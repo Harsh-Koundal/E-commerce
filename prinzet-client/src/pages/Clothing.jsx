@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import axios from "axios";
 
 import headerImage from "../assets/images/clothing-head.png";
+import BreadcrumbNavigation from "@/components/Breadcrumb-Navigation/BreadcrumbNavigation";
 
 export default function ClothingCapBag() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function ClothingCapBag() {
       
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-md">
+        <BreadcrumbNavigation/>
         <div className="flex flex-col md:flex-row gap-6">
           <img
             src={headerImage}

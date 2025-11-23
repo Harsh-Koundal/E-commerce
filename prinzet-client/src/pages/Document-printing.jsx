@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import axios from "axios";
 
 import headerImage from "../assets/images/header-image.png"; // keep or replace with your document header
+import BreadcrumbNavigation from "@/components/Breadcrumb-Navigation/BreadcrumbNavigation";
 
 export default function DocumentPrinting() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function DocumentPrinting() {
     <div className="bg-gray-100 p-6 h-full">
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-md">
+        <BreadcrumbNavigation/>
         <div className="flex flex-col md:flex-row gap-6">
           <img
             src={headerImage}
