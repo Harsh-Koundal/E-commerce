@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "swagger": "node swagger.js",
-    "dev": "npm run swagger && node server.js",
+    "dev": "npm run swagger && nodemon server.js",
     "start": "node server.js"
   },
   "keywords": [],

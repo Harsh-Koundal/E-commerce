@@ -2,6 +2,7 @@ import express from "express";
 import orderController from "../controllers/orderController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
+import { getUnassignedOrders } from "../controllers/orderController.js";
 import {  getInvoice,
   reOrder,
   trackOrder,
@@ -18,13 +19,12 @@ const router = express.Router();
 router.get("/history", authMiddleware, getOrderHistory); // Past orders
 router.get("/payments/history", authMiddleware, getPaymentHistory); // Past payments
 
-// LEGACY: Keep old upload route for backward compatibility
 router.post(
-  "/upload-files-legacy",
+  "/upload-files",
   authMiddleware,
-  upload.array("files"),
-  orderController.upload_file_legacy
+  orderController.upload_files
 );
+
 
 // Order creation route - using new process-first approach
 router.post(
@@ -56,5 +56,6 @@ router.get("/:id/preview-order", authMiddleware, previewOrder);
 router.get("/:id/invoice", authMiddleware, getInvoice);
 
 router.get("/:id/details", authMiddleware, getOrderDetails); // Specific order
+router.get("/unassigned", authMiddleware, getUnassignedOrders);
 
 export default router;
