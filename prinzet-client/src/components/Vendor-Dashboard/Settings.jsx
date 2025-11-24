@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getData, updateData } from "../../lib/api";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const tabs = ["Profile", "Business Info"];
 
@@ -15,6 +16,7 @@ const Settings = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const token = localStorage.getItem("vendorToken");
 
   // Fetch vendor profile
   useEffect(() => {
@@ -41,6 +43,7 @@ const Settings = () => {
   }, []);
 
   const handleChange = (e) => {
+
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -48,7 +51,9 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateData("/vendor/profile", formData);
+      await axios.patch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/profile`, formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Error saving profile:", error);

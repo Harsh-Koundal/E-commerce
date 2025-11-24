@@ -23,7 +23,7 @@ const ProductManagement = () => {
     try {
       if (!token) return;
       const res = await axios.get(
-        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor`,
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/services`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log(res.data)
@@ -56,14 +56,14 @@ const ProductManagement = () => {
 
       if (editingService) {
         await axios.put(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/${editingService._id}`,
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/services/${editingService._id}`,
           newService,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success("Service updated successfully");
       } else {
         await axios.post(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor`,
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/services`,
           newService,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -83,7 +83,7 @@ const ProductManagement = () => {
     try {
       if (!token) return;
       await axios.delete(
-        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/${id}`,
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/services/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Service deleted successfully");
