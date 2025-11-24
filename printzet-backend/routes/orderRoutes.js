@@ -1,5 +1,5 @@
 import express from "express";
-import orderController from "../controllers/orderController.js";
+import orderController, { deleteOrder } from "../controllers/orderController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
 import { getUnassignedOrders } from "../controllers/orderController.js";
@@ -39,6 +39,8 @@ router.get("/", authMiddleware, orderController.getOrder);
 
 // Get a single order by ID
 router.get("/:orderId", authMiddleware, orderController.getSingleOrderById);
+
+router.delete('/:orderId',authMiddleware,deleteOrder);
 
 // Route to get order tracking information
 router.get("/:id/tracking", authMiddleware, trackOrder);
