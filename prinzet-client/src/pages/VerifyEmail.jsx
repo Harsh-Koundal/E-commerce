@@ -15,12 +15,10 @@ const VerifyEmail = () => {
 
         if (location.pathname.includes("vendor")) {
           // Vendor verification
-          endpoint = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/verify-email/${token}`;
-          navigate('/email-verified')
+          endpoint = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/auth/verify-email/${token}`;
         } else {
           // Normal user verification
           endpoint = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/auth/verify-email/${token}`;
-          navigate('/email-verified')
         }
 
         const response = await axios.get(endpoint);
@@ -42,16 +40,10 @@ const VerifyEmail = () => {
   return (
     <div className="flex flex-col items-center justify-center h-screen text-center">
       {status === "verified" && (
-        <>
-          <h1 className="text-4xl font-bold text-green-600"> Email Verified!</h1>
-          <p className="text-lg mt-4">You are now verified!</p>
-        </>
+        navigate('/email/verified')
       )}
       {status === "failed" && (
-        <>
-          <h1 className="text-4xl font-bold text-green-600"> Email Verified!</h1>
-          <p className="text-lg mt-4">You are now verified!</p>
-        </>
+        navigate('/email-verification-failed')
       )}
     </div>
   );

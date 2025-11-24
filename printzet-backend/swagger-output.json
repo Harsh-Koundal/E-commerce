@@ -137,6 +137,9 @@
                   },
                   "mobile": {
                     "example": "any"
+                  },
+                  "email": {
+                    "example": "any"
                   }
                 }
               }
@@ -5176,6 +5179,9 @@
                     "example": "any"
                   },
                   "mobile": {
+                    "example": "any"
+                  },
+                  "email": {
                     "example": "any"
                   }
                 }
