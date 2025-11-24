@@ -37,13 +37,13 @@ const deleteData = async (endpoint) => {
 };
 
 const UserDashboard = () => {
-const [activePage, setActivePage] = useState(() => {
-  return localStorage.getItem("activePage") || "profile";
-});
+  const [activePage, setActivePage] = useState(() => {
+    return localStorage.getItem("activePage") || "profile";
+  });
 
-useEffect(() => {
-  localStorage.setItem("activePage", activePage);
-}, [activePage]);
+  useEffect(() => {
+    localStorage.setItem("activePage", activePage);
+  }, [activePage]);
 
   const { user: authUser, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -148,11 +148,7 @@ useEffect(() => {
           password: "",
         });
 
-        console.log("Profile loaded successfully:", {
-          name: profileData.fullName,
-          email: profileData.email,
-          mobile: profileData.mobile,
-        });
+        console.log(profileData)
       } catch (error) {
         console.error("Error fetching profile:", error);
 
@@ -191,7 +187,7 @@ useEffect(() => {
           }
         );
         console.log("orders :", res.data)
-        const ordersArray = res.data?.data || [];
+        const ordersArray = res.data?.data.orders || [];
         setOrders(ordersArray);
       } catch (error) {
         console.error(
@@ -211,7 +207,6 @@ useEffect(() => {
     const fetchAddresses = async () => {
       try {
         const res = await getData("/auth/user/address");
-        console.log("Raw address response:", res);
 
         // Handle different response structures from backend
         let addresses = [];
@@ -224,14 +219,12 @@ useEffect(() => {
         }
 
         setAddressList(addresses);
-        console.log("Addresses set to:", addresses);
       } catch (error) {
         console.error("Error fetching addresses:", error);
 
         // Handle 404 as no addresses found (not an error)
         if (error.response?.status === 404) {
           setAddressList([]);
-          console.log("No addresses found for user");
         } else {
           toast.error("Failed to load addresses");
           setAddressList([]);
@@ -244,55 +237,69 @@ useEffect(() => {
 
 
   // Profile update handler with comprehensive validation
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
+const handleProfileUpdate = async (e) => {
+  e.preventDefault();
 
-    if (!editData.fullName?.trim()) {
-      toast.error("Full name is required");
-      return;
+  // Validation
+  if (!editData.fullName?.trim()) {
+    toast.error("Full name is required");
+    return;
+  }
+
+  if (
+    editData.mobile &&
+    !/^\d{10}$/.test(editData.mobile.replace(/\D/g, ""))
+  ) {
+    toast.error("Please enter a valid 10-digit mobile number");
+    return;
+  }
+
+  try {
+    const updatePayload = {
+      fullName: editData.fullName.trim(),
+      email:editData.email.trim(),
+      mobile: editData.mobile?.trim() || "",
+    };
+
+    const response = await updateData("/auth/user/profile", updatePayload);
+
+    const updatedUser = response?.data || response;
+
+    toast.success("Profile updated successfully!");
+
+    // Update UI
+    setUser((prev) => ({
+      ...prev,
+      name: updatedUser.fullName || editData.fullName,
+      email:updatedUser.email || editData.email,
+      mobile: updatedUser.mobile || editData.mobile,
+    }));
+
+    // Sync edit form
+    setEditData((prev) => ({
+      ...prev,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      mobile: updatedUser.mobile,
+    }));
+
+    setEditingProfile(false);
+
+  } catch (error) {
+    console.error("Profile update error:", error);
+
+    if (error.response?.status === 400) {
+      toast.error(error.response.data?.message || "Invalid input data");
+    } else if (error.response?.status === 404) {
+      toast.error("User not found. Please login again.");
+      localStorage.removeItem("token");
+      navigate("/login");
+    } else {
+      toast.error("Failed to update profile. Please try again.");
     }
+  }
+};
 
-    if (
-      editData.mobile &&
-      !/^\d{10}$/.test(editData.mobile.replace(/\D/g, ""))
-    ) {
-      toast.error("Please enter a valid 10-digit mobile number");
-      return;
-    }
-
-    try {
-      const updatePayload = {
-        fullName: editData.fullName.trim(),
-        mobile: editData.mobile?.trim() || "",
-      };
-
-      console.log("Updating profile with:", updatePayload);
-      const updatedUser = await updateData("/auth/user/profile", updatePayload);
-
-      toast.success("Profile updated successfully!");
-
-      setUser({
-        name: updatedUser.fullName || editData.fullName,
-        email: user.email,
-        mobile: updatedUser.mobile || editData.mobile,
-        id: user.id,
-      });
-
-      setEditingProfile(false);
-    } catch (error) {
-      console.error("Profile update error:", error);
-
-      if (error.response?.status === 400) {
-        toast.error(error.response.data?.message || "Invalid input data");
-      } else if (error.response?.status === 404) {
-        toast.error("User not found. Please login again.");
-        localStorage.removeItem("token");
-        navigate("/login");
-      } else {
-        toast.error("Failed to update profile. Please try again.");
-      }
-    }
-  };
 
   // Enhanced address handlers with better UX
   const handleAddAddress = async () => {
@@ -328,7 +335,6 @@ useEffect(() => {
         pincode: pincode.trim(),
       };
 
-      console.log("Adding address:", addressPayload);
       await postData("/auth/user/address", addressPayload);
       toast.success("Address added successfully!");
 
@@ -407,16 +413,59 @@ useEffect(() => {
 
   // Order actions
 
-  const handleReorder = (orderId) => {
-    const order = orders.find(o => o._id === orderId);
-    if (!order) return;
-    confirmCustomOrder(order._id);
+  const handleReorder = async (orderId) => {
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/${orderId}/reorder`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+
+      toast.success("Order placed again!");
+
+      setOrders(prev => [res.data.data.order, ...prev]);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to reorder");
+    }
   };
 
+  const confirmCustomOrder = async (orderId) => {
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/${orderId}/customise-reorder`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
 
-  const deleteOrder = (orderId) => {
-    setOrders((prev) => prev.filter((o) => o._id !== orderId));
-    toast.success("Order deleted successfully!");
+      toast.success("Order placed again!");
+      setCustomizingOrder(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to reorder");
+    }
+  }
+
+
+
+
+  const deleteOrder = async (orderId) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setOrders(prev => prev.filter(o => o._id !== orderId));
+      toast.success("Order deleted successfully!");
+    } catch (err) {
+      toast.error("failed to delete order")
+    }
   };
 
   const handleSupportSubmit = async () => {
@@ -483,9 +532,9 @@ useEffect(() => {
                 <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  value={editData.name}
+                  value={editData.fullName}
                   onChange={(e) =>
-                    setEditData({ ...editData, name: e.target.value })
+                    setEditData({ ...editData, fullName: e.target.value })
                   }
                   className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
                   placeholder="Enter your full name"
@@ -664,14 +713,14 @@ useEffect(() => {
                   <div className="flex flex-wrap items-center gap-2 justify-between">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-gray-800 text-lg">
-                        Order #{order.orderId}
+                        Order #{order._id}
                       </h3>
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-full ${order.status === "completed"
-                            ? "bg-green-100 text-green-700"
-                            : order.status === "pending"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
+                          ? "bg-green-100 text-green-700"
+                          : order.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
                           }`}
                       >
                         {order.status?.toUpperCase() || "UNKNOWN"}
@@ -715,7 +764,7 @@ useEffect(() => {
                   <button
                     onClick={() =>
                       setSelectedOrder(
-                        selectedOrder === order.id ? null : order.id
+                        selectedOrder === order._id ? null : order._id
                       )
 
                     }
@@ -753,6 +802,7 @@ useEffect(() => {
                     <p><strong>Printed Sides:</strong> {order.printedSides}</p>
                     <p><strong>Payment Method:</strong> {order.paymentMethod}</p>
                     <p><strong>Transaction:</strong> {order.transactionId}</p>
+
                   </div>
                 </div>
               )}
@@ -811,104 +861,92 @@ useEffect(() => {
 
 
   const renderReorders = () => (
-    <div className="bg-gradient-to-r from-pink-100 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
-        Re-orders with Customization
-      </h2>
-      {Array.isArray(orders) && orders.length > 0 ? (
-        orders
-          .filter((o) => o.status?.toLowerCase() === "completed")
-          .map((order) => (
-            <div
-              key={order._id}
-              className="border border-pink-100 rounded-2xl p-5 mb-4 bg-white/90 shadow-sm hover:shadow-md transition"
-            >
-              {/* Order Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-gray-800">
-                    Order #{order.id}
-                  </h3>
-                  <p>
-                    {order.items && Array.isArray(order.items)
-                      ? order.items.map((i) => i.name || i).join(", ")
-                      : "No items"}
+  <div className="bg-gradient-to-r from-pink-100 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
+    <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
+      Re-orders with Customization
+    </h2>
 
-                  </p>
-                </div>
-                <button
-                  onClick={() => setCustomizingOrder(order._id)}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg hover:opacity-90 transition"
-                >
-                  <Edit3 size={16} /> Customize
-                </button>
+    {Array.isArray(orders) && orders.length > 0 ? (
+      orders
+        .filter((o) => o.status?.toLowerCase() === "completed")
+        .map((order) => (
+          <div
+            key={order._id}
+            className="border border-pink-100 rounded-2xl p-5 mb-4 bg-white/90 shadow-sm hover:shadow-md transition"
+          >
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-gray-800">Order #{order._id}</h3>
+                <p>
+                  {order.items?.length
+                    ? order.items.map(i => i.name || i).join(", ")
+                    : order.subCategory || "No items"}
+                </p>
               </div>
-              {/* Customization Section */}
-              {customizingOrder === order._id && (
-                <div className="mt-4 p-5 bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl border border-pink-100 shadow-sm">
-                  <h4 className="font-semibold mb-3">Customize Your Order:</h4>
-                  <div className="space-y-2 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-purple-500 border-purple-300 rounded focus:ring-purple-400"
-                        checked={customOptions[order._id]?.extraPages || false}
-                        onChange={() =>
-                          handleOptionChange(order._id, "extraPages")
-                        }
-                      />
-                      <span>Extra Pages (+₹20)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-purple-500 border-purple-300 rounded focus:ring-purple-400"
-                        checked={customOptions[order._id]?.glossyDesigns || false}
-                        onChange={() =>
-                          handleOptionChange(order._id, "glossyDesigns")
-                        }
-                      />
-                      <span>Glossy Designs (+₹15)</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-purple-500 border-purple-300 rounded focus:ring-purple-400"
-                        checked={customOptions[order._id]?.printQuality || false}
-                        onChange={() =>
-                          handleOptionChange(order._id, "printQuality")
-                        }
-                      />
-                      <span>Premium Print Quality (+₹30)</span>
-                    </label>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => confirmCustomOrder(order._id)}
-                      disabled={loading}
-                      className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:opacity-90 hover:shadow-lg transition"
-                    >
-                      {loading ? "Placing..." : "Confirm Order"}
-                    </button>
-                    <button
-                      onClick={() => setCustomizingOrder(null)}
-                      className="flex-1 px-1 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 font-medium shadow-sm hover:shadow-md hover:opacity-90 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
+
+              <button
+                onClick={() => setCustomizingOrder(
+                  customizingOrder === order._id ? null : order._id
+                )}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg hover:opacity-90 transition"
+              >
+                <Edit3 size={16} /> Customize
+              </button>
             </div>
-          ))
-      ) : (
-        <div className="text-center py-8 text-gray-500">
-          <FiGrid className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No completed orders available for re-ordering</p>
-        </div>
-      )}
-    </div>
-  );
+
+            {/* Customization */}
+            {customizingOrder === order._id && (
+              <div className="mt-4 p-5 bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl border border-pink-100 shadow-sm">
+                <h4 className="font-semibold mb-3">Customize Your Order:</h4>
+
+                <div className="space-y-2 mb-4">
+                  {[
+                    { key: "extraPages", label: "Extra Pages (+₹20)" },
+                    { key: "glossyDesigns", label: "Glossy Designs (+₹15)" },
+                    { key: "printQuality", label: "Premium Print Quality (+₹30)" },
+                  ].map(opt => (
+                    <label key={opt.key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 text-purple-500 border-purple-300 rounded focus:ring-purple-400"
+                        checked={customOptions[order._id]?.[opt.key] || false}
+                        onChange={() => handleOptionChange(order._id, opt.key)}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => confirmCustomOrder(order._id)}
+                    disabled={loading}
+                    className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:opacity-90 hover:shadow-lg transition"
+                  >
+                    {loading ? "Placing..." : "Confirm Order"}
+                  </button>
+
+                  <button
+                    onClick={() => setCustomizingOrder(null)}
+                    className="flex-1 px-1 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 font-medium shadow-sm hover:shadow-md hover:opacity-90 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+    ) : (
+      <div className="text-center py-8 text-gray-500">
+        <FiGrid className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <p>No completed orders available for re-ordering</p>
+      </div>
+    )}
+  </div>
+);
+
 
   const renderSettings = () => {
     return (
@@ -1075,36 +1113,32 @@ useEffect(() => {
           </button>
           <button
             onClick={() => setActivePage("orders")}
-            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${
-              activePage === "orders" ? "bg-white/20" : "hover:bg-white/10"
-            }`}
+            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${activePage === "orders" ? "bg-white/20" : "hover:bg-white/10"
+              }`}
           >
             <FiFileText className="w-5 h-5 mr-0 md:mr-3" />
             <span className="hidden md:inline">Orders</span>
           </button>
           <button
             onClick={() => setActivePage("reorders")}
-            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${
-              activePage === "reorders" ? "bg-white/20" : "hover:bg-white/10"
-            }`}
+            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${activePage === "reorders" ? "bg-white/20" : "hover:bg-white/10"
+              }`}
           >
             <FiGrid className="w-5 h-5 mr-0 md:mr-3" />
             <span className="hidden md:inline">Re-orders</span>
           </button>
           <button
             onClick={() => setActivePage("settings")}
-            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${
-              activePage === "settings" ? "bg-white/20" : "hover:bg-white/10"
-            }`}
+            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${activePage === "settings" ? "bg-white/20" : "hover:bg-white/10"
+              }`}
           >
             <FiSettings className="w-5 h-5 mr-0 md:mr-3" />
             <span className="hidden md:inline">Settings</span>
           </button>
           <button
             onClick={() => setActivePage("support")}
-            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${
-              activePage === "support" ? "bg-white/20" : "hover:bg-white/10"
-            }`}
+            className={`flex items-center justify-center md:justify-start px-6 py-3 rounded-xl transition-all duration-200 ${activePage === "support" ? "bg-white/20" : "hover:bg-white/10"
+              }`}
           >
             <FiMessageCircle className="w-5 h-5 mr-0 md:mr-3" />
             <span className="hidden md:inline">Support</span>

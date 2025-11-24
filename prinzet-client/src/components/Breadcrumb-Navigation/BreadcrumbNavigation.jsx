@@ -46,10 +46,6 @@ const pathNameMap = {
     label: "Custom Drinkware",
     link: "/drinkware",
   },
-  "clothing-printing": {
-    label: "Clothing, Caps & Bags",
-    link: "/clothing",
-  },
 };
 
 const formatSegment = (segment) =>
