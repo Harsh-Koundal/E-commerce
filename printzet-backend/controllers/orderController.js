@@ -499,7 +499,21 @@ const place_order = async (req, res) => {
 };
 
 
+export const deleteOrder = async(req,res,next)=>{
+    try{
+        const orderId = req.params.orderId;
+        const userId = req.userId || req.user.id;
 
+        if(!orderId) return res.status(400).json({message:"Order Id missing" });
+        const order = await Order.findOne({_id:orderId,userId});
+        if(!order) return res.status(400).json({message:"Order not found"});
+        await Order.findByIdAndDelete(orderId);
+        return res.status(200).json({message:"order deleted successfully"})
+    }catch (error) {
+        console.error(error)
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
 
 const getOrder = async (req, res) => {
     try {
@@ -510,7 +524,7 @@ const getOrder = async (req, res) => {
         // First get all successful payment records for this user
         const successfulPayments = await Payment.find({ 
             userId: userId, 
-            paymentStatus: "SUCCESS" 
+            // paymentStatus: "SUCCESS" 
         }).select("orderId");
         
         // Extract order IDs from successful payments
@@ -526,7 +540,7 @@ const getOrder = async (req, res) => {
             .populate("assignedAgent", "name phone")
             .sort({ createdAt: -1 });
         
-        sendResponse(res, 200, "Orders fetched successfully","success", orders);
+        sendResponse(res, 200, "Orders fetched successfully","success", {orders});
 
     } catch (error) {
         sendResponse(res, 500, "Error fetching orders", null, error);

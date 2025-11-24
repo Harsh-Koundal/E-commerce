@@ -35,7 +35,7 @@ const reOrder = async (req, res) => {
         const newOrder = new Order(clonedOrderData);
         await newOrder.save();
 
-        return res.status(201).json({ message: "Reorder placed", order: newOrder });
+        return res.status(201).json({ message: "Reorder placed",data:{order:newOrder}});
 
     } catch (error) {
         console.error("Error while reordering:", error)
