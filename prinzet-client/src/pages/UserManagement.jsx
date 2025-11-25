@@ -1,7 +1,7 @@
 // UserManagement.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Search, Filter, Eye, Edit, Trash2, X,Clock } from "lucide-react";
+import { Plus, Search, Filter, Eye, Edit, Trash2, X, Clock } from "lucide-react";
 import api from "@/lib/api";
 
 
@@ -39,6 +39,13 @@ export default function UserManagement() {
   const [showForm, setShowForm] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const [logs, setLogs] = useState([]);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    fullName: "",
+    email: "",
+    mobile: "",
+    role: "",
+  })
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -55,6 +62,7 @@ export default function UserManagement() {
       try {
         const res = await api.get(`/admin/operation/users`);
         setUsers(res.data?.data.users || []);
+        console.log(res)
       } catch (error) {
         console.error(
           "Error fetching users:",
@@ -100,19 +108,33 @@ export default function UserManagement() {
   };
 
   // Edit user
-  const editUser = async (userId, updates) => {
-    try {
-      console.log("Editing user:", userId, updates);
-      // const res = await api.put(`/admin/operation/users/${userId}`, updates);
-      //mocking the api 
-      const res = { data: { data: { ...updates, _id: userId } } };
-      setUsers((prev) =>
-        prev.map((u) => (u._id === userId ? res.data?.data : u))
-      );
-    } catch (error) {
-      console.error("Error editing user:", error.response?.data || error.message);
-    }
-  };
+const editUser = async (userId, formData) => {
+  try {
+    console.log("Editing user:", userId, formData);
+
+    const res = await axios.put(
+      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/operation/users/${userId}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    const updatedUser = res.data?.data?.user;
+    if (!updatedUser) throw new Error("No updated user returned from API");
+
+    setUsers((prev) =>
+      prev.map((u) => (u._id === userId ? updatedUser : u))
+    );
+
+  } catch (error) {
+    console.error("Error editing user:", error?.response?.data || error?.message);
+  }
+};
+
+
 
   // Delete user
   const deleteUser = async (userId) => {
@@ -151,7 +173,14 @@ export default function UserManagement() {
 
       {showForm && <Adduser {...{ addUser, setShowForm, formData, handleChange }} />}
       {showLogs && <UserLogsModal logs={sampleLogs} setShowLogs={setShowLogs} />}
-
+      {showEditForm && (
+        <EditUserModal
+          editUser={editUser}
+          editFormData={editFormData}
+          setEditFormData={setEditFormData}
+          setShowEditForm={setShowEditForm}
+        />
+      )}
       {/* table */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 border-b">
@@ -226,7 +255,17 @@ export default function UserManagement() {
                           </button>
                           <button
                             className="text-green-600 hover:text-green-900"
-                            onClick={() => editUser()}
+                            onClick={() => {
+                              setEditFormData({
+                                _id: user._id,
+                                fullName: user.fullName,
+                                email: user.email,
+                                mobile: user.mobile,
+                                role: user.isEmployee ? "employee" : "admin",
+                              });
+                              setShowEditForm(true);
+                            }}
+
                           >
                             <Edit className="h-4 w-4" />
                           </button>
@@ -379,3 +418,90 @@ const UserLogsModal = ({ logs, setShowLogs }) => {
     </div>
   );
 }
+
+const EditUserModal = ({ editUser, editFormData, setEditFormData, setShowEditForm }) => {
+  const handleChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      fullName: editFormData.fullName,
+      email: editFormData.email,
+      mobile: editFormData.mobile,
+      role: editFormData.role,
+    };
+
+    await editUser(editFormData._id, payload);
+    setShowEditForm(false);
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Edit User</h3>
+          <button onClick={() => setShowEditForm(false)}>
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Full Name"
+            value={editFormData.fullName}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={editFormData.email}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+
+          <input
+            type="text"
+            name="mobile"
+            placeholder="Mobile Number"
+            value={editFormData.mobile}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+            required
+          />
+
+          <select
+            name="role"
+            value={editFormData.role}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          >
+            <option value="employee">Employee</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full"
+          >
+            Update User
+          </button>
+
+        </form>
+      </div>
+    </div>
+  );
+};
