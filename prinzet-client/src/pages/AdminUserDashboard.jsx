@@ -18,6 +18,7 @@ const AdminUserDashboard = () => {
                 });
                 setUsers(res.data.data);
                 setFilteredUsers(res.data.data);
+                console.log("users",res)
             } catch (err) {
                 console.error("Error fetching users:", err);
                 setError("Failed to load users. Please try again.");
