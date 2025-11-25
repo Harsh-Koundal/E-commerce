@@ -1,59 +1,57 @@
 import { DollarSign, Package, ShoppingBag, TrendingUp, Users } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const Overview = () => {
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Poster",
-      price: 99.99,
-      stock: 50,
-      category: "document",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Tshirt",
-      price: 299.99,
-      stock: 25,
-      category: "cloathing",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Coffee Mug",
-      price: 15.99,
-      stock: 100,
-      category: "Home",
-      status: "Draft",
-    },
-  ]);
-  const [orders, setOrders] = useState([
-    {
-      id: "#ORD-001",
-      customer: "John Doe",
-      total: 149.99,
-      status: "Processing",
-      date: "2024-08-25",
-      items: [{ name: "Coffee Mug", qty: 5, price: 300 }],
-    },
-    {
-      id: "#ORD-002",
-      customer: "Jane Smith",
-      total: 299.99,
-      status: "Shipped",
-      date: "2024-08-24",
-      items: [{ name: "Polo T-shirt", qty: 3, price: 400 }],
-    },
-    {
-      id: "#ORD-003",
-      customer: "Mike Johnson",
-      total: 75.5,
-      status: "Delivered",
-      date: "2024-08-23",
-      items: [{ name: "Mouse Pad", qty: 2, price: 500 }],
-    },
-  ]);
+  const token = localStorage.getItem("token");
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/orders`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const orders = res.data?.data || [];
+      setOrders(orders);
+    } catch (err) {
+      console.error("Failed to load orders:", err.response?.data || err.message);
+      toast.error("Failed to load recent orders");
+    }
+  };
+
+  if (token) fetchOrders();
+}, [token]);
+
+useEffect(() => {
+  const fetchTopProducts = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/top-products`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const products = res.data.data || [];
+      setProducts(products);
+
+      console.log("Orders loaded:", res);
+    } catch (err) {
+      console.error("Failed to load products:", err.response?.data || err.message);
+      toast.error("Failed to load recent products");
+    }
+  };
+
+  if (token) fetchTopProducts();
+}, [token]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -75,7 +73,7 @@ const Overview = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
             </div>
             <ShoppingBag className="h-8 w-8 text-green-500" />
           </div>
@@ -120,15 +118,15 @@ const Overview = () => {
           <div className="space-y-4">
             {orders.slice(0, 5).map((order) => (
               <div
-                key={order.id}
+                key={order.orderId}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div>
-                  <p className="font-medium">{order.id}</p>
-                  <p className="text-sm text-gray-600">{order.customer}</p>
+                  <p className="font-medium">{order.orderId}</p>
+                  <p className="text-sm text-gray-600">{order.customerDetails.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">${order.total}</p>
+                  <p className="font-medium">${order.totalCost}</p>
                   <span
                     className={`inline-block px-2 py-1 text-xs rounded-full ${order.status === "Delivered"
                       ? "bg-green-100 text-green-800"
@@ -146,27 +144,36 @@ const Overview = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold mb-4">Top Products</h3>
-          <div className="space-y-4">
-            {products.slice(0, 5).map((product) => (
-              <div
-                key={product.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div>
-                  <p className="font-medium">{product.name}</p>
-                  <p className="text-sm text-gray-600">{product.category}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">${product.price}</p>
-                  <p className="text-sm text-gray-600">
-                    Stock: {product.stock}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+  <h3 className="text-lg font-semibold mb-4">Top Products</h3>
+
+  <div className="space-y-4">
+    {products.slice(0, 5).map((item, index) => (
+      <div
+        key={index}
+        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+      >
+        {/* Left Side */}
+        <div>
+          <p className="font-medium capitalize">{item.subCategory}</p>
+          <p className="text-sm text-gray-600">
+            Ordered by: {item.lastUserName}
+          </p>
         </div>
+
+        {/* Right Side */}
+        <div className="text-right">
+          <p className="font-medium">
+            ₹{item.lastOrderPrice?.toFixed(2)}
+          </p>
+          <p className="text-sm text-gray-600">
+            Orders: {item.totalOrders}
+          </p>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
       </div>
     </div>
   )
