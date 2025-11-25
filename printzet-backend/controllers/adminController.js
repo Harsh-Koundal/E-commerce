@@ -10,7 +10,7 @@ const getAllUsers = async (req, res) => {
     try {
         const users = await User.find().select("-password");
         // res.json(users);
-        sendResponse(res, 200, "Users fetched successfully", "success", {data:users});
+        sendResponse(res, 200, "Users fetched successfully", "success", { data: users });
     } catch (error) {
         console.error("Error fetching users:", error);
         // res.status(500).json({ message: "Error fetching users", error: error.message });
@@ -159,6 +159,57 @@ const getAllVendors = async (req, res) => {
         sendResponse(res, 500, "Failed to fetch vendors", "error", err.message);
     }
 }
+
+export const getTopProducts = async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 4;
+
+    const topProducts = await Order.aggregate([
+      // Group subcategory stats
+      {
+        $group: {
+          _id: "$subCategory",
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: "$totalCost" },
+          averagePrice: { $avg: "$totalCost" },
+          latestOrder: { $last: "$$ROOT" }
+        }
+      },
+
+      // Sort by most ordered
+      { $sort: { totalOrders: -1 } },
+
+      // Limit to top 3–4
+      { $limit: limit },
+
+      // Format data
+      {
+        $project: {
+          _id: 0,
+          subCategory: "$_id",
+          totalOrders: 1,
+          totalRevenue: 1,
+          averagePrice: { $round: ["$averagePrice", 2] },
+          lastUserName: "$latestOrder.customerDetails.name",
+          lastOrderPrice: "$latestOrder.totalCost"
+        }
+      }
+    ]);
+
+    return sendResponse(
+      res,
+      200,
+      "Top products with user and price fetched successfully",
+      "success",
+      topProducts
+    );
+
+  } catch (error) {
+    console.error("Error fetching top products:", error);
+    return sendResponse(res, 500, "Internal Server Error", "error");
+  }
+};
+
 
 export {
     getAllUsers,
