@@ -172,9 +172,9 @@ function App() {
         <Route
           path="/order-page/accessory-printing"
           element={
-            //<UserProtectedRoute>
+            <UserProtectedRoute>
             <AccessoryOrderPage />
-            //</UserProtectedRoute>
+            </UserProtectedRoute>
           }
         />
         <Route
@@ -222,19 +222,35 @@ function App() {
         />
         <Route
           path="/admin/dashboard"
-          element={<AdminDashboard />}
+          element={
+            <AdminProtectedRoute>
+             <AdminDashboard />
+            </AdminProtectedRoute>
+          }
         />
         <Route
           path="/admin/finance/payments"
-          element={<PaymentsPage />}
+          element={
+            <AdminProtectedRoute>
+          <PaymentsPage />
+            </AdminProtectedRoute>
+        }
         />
         <Route
           path="/admin/finance/reports"
-          element={<ReportsPage />}
+          element={
+            <AdminProtectedRoute>
+              <ReportsPage />
+            </AdminProtectedRoute>
+        }
         />
         <Route
           path="/admin/finance/transactions"
-          element={<TransactionsPage />}
+          element={
+            <AdminProtectedRoute>
+          <TransactionsPage />
+            </AdminProtectedRoute>
+          }
         />
         <Route
           path="/admin/document-orders"
