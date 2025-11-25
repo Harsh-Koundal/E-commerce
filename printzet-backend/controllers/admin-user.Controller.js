@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 const createAdminUser = async (req, res) => {
   try {
-    const { name, email, role, status, joinDate, mobile, password } = req.body;
+    const { name, email,role, status, joinDate, mobile, password } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -19,9 +19,10 @@ const createAdminUser = async (req, res) => {
       email,
       mobile,
       password: hashedPassword,
-      role,
       status,
       joinDate,
+      role,
+      isAdmin:role==="admin"?true:false,
       isEmployee: true,
       isVerified: true,
     });
@@ -39,7 +40,8 @@ const createAdminUser = async (req, res) => {
 const editAdminUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { fullName, mobile, email, password } = req.body;
+        const { fullName, mobile, email, role} = req.body;
+        const isAdmin = role==="admin"?true:false;
         const user = await User.findById(userId);
         if (!user) {
             return sendResponse(res, 404, "User not found", "error");
@@ -47,11 +49,8 @@ const editAdminUser = async (req, res) => {
         user.fullName = fullName || user.fullName;
         user.email = email || user.email;
         user.mobile = mobile || user.mobile;
+        user.isAdmin = isAdmin;
 
-        if (password) {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            user.password = hashedPassword;
-        }
         await user.save();
 
         return sendResponse(res, 200, "Admin user updated successfully", "success");
