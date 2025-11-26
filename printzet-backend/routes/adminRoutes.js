@@ -2,7 +2,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { adminMiddleware } from "../middleware/adminMiddleware.js";
-import { assignVendorToOrder, getAccessoryOrderById, getAllAccessoryOrders, getAllOrders, getAllUsers, getAllVendors, getOrderById, getTopProducts, updateUserAddress } from "../controllers/adminController.js";
+import { assignVendorToOrder, getAccessoryOrderById, getAllAccessoryOrders, getAllOrders, getAllUsers, getAllVendors, getOrderById, getTopProducts, getTotalProducts, updateUserAddress } from "../controllers/adminController.js";
 
 import { createServiceCategory, getAllServiceCategories, getServiceCategoryById, updateServiceCategory, deleteServiceCategory } from "../controllers/serviceCategory.controller.js";
 import { documentUpload } from "../middleware/multer.middleware.js";
@@ -22,6 +22,9 @@ router.get("/users", authMiddleware, adminMiddleware, getAllUsers);
 // ✅ GET all document printing orders (Admin Only)
 router.get("/orders", authMiddleware, adminMiddleware, getAllOrders);
 router.post("/orders/:id/assign-vendor", authMiddleware, adminMiddleware, assignVendorToOrder);
+
+// Get total products
+router.get('/total-products',authMiddleware,adminMiddleware,getTotalProducts);
 
 // Get top products
 router.get('/top-products',authMiddleware,adminMiddleware,getTopProducts);

@@ -4,16 +4,15 @@ import AccessoryOrder from "../models/AccessoryOrder.js"
 import authMiddleware from "../middleware/authMiddleware.js";
 import Vendor from "../models/Vendor.js";
 import sendResponse from "../utils/sendResponse.js";
+import Category from "../models/Category.js";
 
 
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find().select("-password");
-        // res.json(users);
         sendResponse(res, 200, "Users fetched successfully", "success", { data: users });
     } catch (error) {
         console.error("Error fetching users:", error);
-        // res.status(500).json({ message: "Error fetching users", error: error.message });
         sendResponse(res, 500, "Error fetching users", "error", error.message);
     }
 }
@@ -27,13 +26,10 @@ const getAllOrders = async (req, res) => {
             ...order.toObject(),
             files: order.files,
         }));
-        // console.log(ordersWithCloudinaryLinks);
 
-        // res.json(ordersWithCloudinaryLinks);
         sendResponse(res, 200, "Orders fetched", "success", ordersWithCloudinaryLinks);
     } catch (error) {
         console.error("Error fetching orders:", error);
-        // res.status(500).json({ message: "Error fetching orders", error: error.message });
         sendResponse(res, 500, "Error fetching orders", "error", error.message);
     }
 }
@@ -190,7 +186,6 @@ export const getTopProducts = async (req, res) => {
           totalOrders: 1,
           totalRevenue: 1,
           averagePrice: { $round: ["$averagePrice", 2] },
-          lastUserName: "$latestOrder.customerDetails.name",
           lastOrderPrice: "$latestOrder.totalCost"
         }
       }
@@ -209,6 +204,35 @@ export const getTopProducts = async (req, res) => {
     return sendResponse(res, 500, "Internal Server Error", "error");
   }
 };
+
+export const getTotalProducts = async (req, res) => {
+  try {
+    const categories = await Category.find().lean();
+
+    let totalProducts = 0;
+
+    categories.forEach(category => {
+      totalProducts += Array.isArray(category.subcategories)
+        ? category.subcategories.length
+        : 0;
+    });
+
+    return res.status(200).json({
+      success: true,
+      totalProducts,
+      message: "Total products calculated successfully."
+    });
+
+  } catch (error) {
+    console.error("Error getting total products:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
 
 
 export {
