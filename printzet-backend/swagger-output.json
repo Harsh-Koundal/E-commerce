@@ -1361,6 +1361,25 @@
         }
       }
     },
+    "/api/admin/top-products": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/admin/accessory-orders": {
       "get": {
         "description": "",
@@ -1708,7 +1727,7 @@
                   "email": {
                     "example": "any"
                   },
-                  "password": {
+                  "role": {
                     "example": "any"
                   }
                 }
@@ -5613,6 +5632,25 @@
         }
       }
     },
+    "/top-products": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/accessory-orders": {
       "get": {
         "description": "",
@@ -5950,7 +5988,7 @@
                   "email": {
                     "example": "any"
                   },
-                  "password": {
+                  "role": {
                     "example": "any"
                   }
                 }
