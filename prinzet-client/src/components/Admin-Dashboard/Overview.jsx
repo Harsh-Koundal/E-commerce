@@ -8,9 +8,11 @@ const Overview = () => {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [totalUsers, setTotalUsers] = useState(null);
+  const [userPercent , setUserPercent] = useState(0);
   const [totalProducts, setTotalProducts] = useState(null);
+  const [revenue , setRevenue] = useState(0);
+  const [revenuePercent , setRevenuePercent] = useState(0);
 
-  useEffect(() => {
   const fetchOrders = async () => {
     try {
       const res = await axios.get(
@@ -28,8 +30,6 @@ const Overview = () => {
     }
   };
 
-  if (token) fetchOrders();
-}, [token]);
 
   const fetchTopProducts = async () => {
     try {
@@ -60,8 +60,7 @@ const fetchTotalProducts = async () => {
         }
       );
 
-      setTotalProducts(res.data.totalProducts)
-      console.log(res.data);
+      setTotalProducts(res.data.totalProducts);
 
     } catch (err) {
       console.error(err);
@@ -77,22 +76,37 @@ const fetchTotalProducts = async () => {
         }
       );
 
-      setTotalUsers(res.data.data.data.length);
-
+      setTotalUsers(res.data.totalUsers);
+      setUserPercent(res.data.percentageChange)
+      console.log(res)
     } catch (err) {
       console.error(err);
     }
   };
 
-  fetchUsers();
+  const fetchRevenue = async()=>{
+    try{
+      const res = await axios.get(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/revenue`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setRevenue(res.data.currentRevenue);
+      setRevenuePercent(res.data.percentageChange);
+    }catch (err) {
+      console.error(err);
+    }
+  }
 
 
   useEffect(() => {
   if (!token) return;
-
+  fetchOrders();
   fetchUsers();
   fetchTopProducts();
   fetchTotalProducts();
+  fetchRevenue();
 }, [token]);
 
   return (
@@ -108,7 +122,7 @@ const fetchTotalProducts = async () => {
           </div>
           <div className="flex items-center mt-2 text-sm text-green-600">
             <TrendingUp className="h-4 w-4 mr-1" />
-            <span>+12% from last month</span>
+            <span>+{userPercent}% from last month</span>
           </div>
         </div>
 
@@ -130,13 +144,13 @@ const fetchTotalProducts = async () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">₹ 0</p>
+              <p className="text-2xl font-bold text-gray-900">₹ {revenue}</p>
             </div>
             <DollarSign className="h-8 w-8 text-purple-500" />
           </div>
           <div className="flex items-center mt-2 text-sm text-green-600">
             <TrendingUp className="h-4 w-4 mr-1" />
-            <span>+0% from last month</span>
+            <span>+{revenuePercent}% from last month</span>
           </div>
         </div>
 
