@@ -10,10 +10,54 @@ import Category from "../models/Category.js";
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find().select("-password");
-        sendResponse(res, 200, "Users fetched successfully", "success", { data: users });
+        const now = new Date();
+
+        // This Month
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const thisMonthEnd = now;
+
+        // Last Month
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        // ---------------- Total Users (all time)
+        const totalUsers = await User.countDocuments();
+
+        // ---------------- Users Joined This Month
+        const thisMonthUsers = await User.countDocuments({
+            createdAt: { $gte: thisMonthStart, $lte: thisMonthEnd }
+        });
+
+        // ---------------- Users Joined Last Month
+        const lastMonthUsers = await User.countDocuments({
+            createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
+        });
+
+        // ---------------- % Change
+        let percentageChange = 0;
+
+        if (lastMonthUsers === 0 && thisMonthUsers > 0) {
+            percentageChange = 100;
+        } else if (lastMonthUsers > 0) {
+            percentageChange =
+                ((thisMonthUsers - lastMonthUsers) / lastMonthUsers) * 100;
+        }
+
+        return res.status(200).json({
+            success: true,
+            users,
+            totalUsers,
+            usersJoinedThisMonth: thisMonthUsers,
+            percentageChange: Number(percentageChange.toFixed(2)),
+        });
+
     } catch (error) {
-        console.error("Error fetching users:", error);
-        sendResponse(res, 500, "Error fetching users", "error", error.message);
+        console.error("User stats error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching stats",
+            error: error.message
+        });
     }
 }
 
@@ -141,7 +185,7 @@ const getAccessoryOrderById = async (req, res) => {
     } catch (error) {
         console.error("Error updating accessory order:", error);
         // res.status(500).json({ message: "Error updating accessory order", error: error.message });
-        sendResponse(res, 200, "Accessory Order updated", "success", order);
+        sendResponse(res, 200, "Accessory Order updated", "success", error);
     }
 }
 
@@ -157,79 +201,151 @@ const getAllVendors = async (req, res) => {
 }
 
 export const getTopProducts = async (req, res) => {
-  try {
-    const limit = Number(req.query.limit) || 4;
+    try {
+        const limit = Number(req.query.limit) || 4;
 
-    const topProducts = await Order.aggregate([
-      // Group subcategory stats
-      {
-        $group: {
-          _id: "$subCategory",
-          totalOrders: { $sum: 1 },
-          totalRevenue: { $sum: "$totalCost" },
-          averagePrice: { $avg: "$totalCost" },
-          latestOrder: { $last: "$$ROOT" }
-        }
-      },
+        const topProducts = await Order.aggregate([
+            // Group subcategory stats
+            {
+                $group: {
+                    _id: "$subCategory",
+                    totalOrders: { $sum: 1 },
+                    totalRevenue: { $sum: "$totalCost" },
+                    averagePrice: { $avg: "$totalCost" },
+                    latestOrder: { $last: "$$ROOT" }
+                }
+            },
 
-      // Sort by most ordered
-      { $sort: { totalOrders: -1 } },
+            // Sort by most ordered
+            { $sort: { totalOrders: -1 } },
 
-      // Limit to top 3–4
-      { $limit: limit },
+            // Limit to top 3–4
+            { $limit: limit },
 
-      // Format data
-      {
-        $project: {
-          _id: 0,
-          subCategory: "$_id",
-          totalOrders: 1,
-          totalRevenue: 1,
-          averagePrice: { $round: ["$averagePrice", 2] },
-          lastOrderPrice: "$latestOrder.totalCost"
-        }
-      }
-    ]);
+            // Format data
+            {
+                $project: {
+                    _id: 0,
+                    subCategory: "$_id",
+                    totalOrders: 1,
+                    totalRevenue: 1,
+                    averagePrice: { $round: ["$averagePrice", 2] },
+                    lastOrderPrice: "$latestOrder.totalCost"
+                }
+            }
+        ]);
 
-    return sendResponse(
-      res,
-      200,
-      "Top products with user and price fetched successfully",
-      "success",
-      topProducts
-    );
+        return sendResponse(
+            res,
+            200,
+            "Top products with user and price fetched successfully",
+            "success",
+            topProducts
+        );
 
-  } catch (error) {
-    console.error("Error fetching top products:", error);
-    return sendResponse(res, 500, "Internal Server Error", "error");
-  }
+    } catch (error) {
+        console.error("Error fetching top products:", error);
+        return sendResponse(res, 500, "Internal Server Error", "error");
+    }
 };
 
 export const getTotalProducts = async (req, res) => {
-  try {
-    const categories = await Category.find().lean();
+    try {
+        const categories = await Category.find().lean();
 
-    let totalProducts = 0;
+        let totalProducts = 0;
 
-    categories.forEach(category => {
-      totalProducts += Array.isArray(category.subcategories)
-        ? category.subcategories.length
-        : 0;
-    });
+        categories.forEach(category => {
+            totalProducts += Array.isArray(category.subcategories)
+                ? category.subcategories.length
+                : 0;
+        });
 
-    return res.status(200).json({
-      success: true,
-      totalProducts,
-      message: "Total products calculated successfully."
-    });
+        return res.status(200).json({
+            success: true,
+            totalProducts,
+            message: "Total products calculated successfully."
+        });
 
-  } catch (error) {
-    console.error("Error getting total products:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
+    } catch (error) {
+        console.error("Error getting total products:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+// revenue 
+export const getRevenue = async (req, res) => {
+    try {
+        const now = new Date();
+
+        // This Month
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        // Last Month
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        const filter = {
+            status: "completed",
+            transactionId: { $ne: null }
+        };
+
+        // Current month revenue
+        const currentAgg = await Order.aggregate([
+            {
+                $match: {
+                    ...filter,
+                    createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+                }
+            },
+            { $group: { _id: null, revenue: { $sum: "$totalCost" } } }
+        ]);
+
+        const currentRevenue = Math.floor(currentAgg[0]?.revenue) || 0;
+
+        // Last month revenue
+        const lastAgg = await Order.aggregate([
+            {
+                $match: {
+                    ...filter,
+                    createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
+                }
+            },
+            { $group: { _id: null, revenue: { $sum: "$totalCost" } } }
+        ]);
+
+        const lastMonthRevenue = lastAgg[0]?.revenue || 0;
+
+        // % Change
+        let percentageChange = 0;
+
+        if (lastMonthRevenue === 0 && currentRevenue > 0) {
+            percentageChange = 100;
+        } else if (lastMonthRevenue > 0) {
+            percentageChange =
+                ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+        }
+
+
+        return res.status(200).json({
+            success: true,
+            currentRevenue,
+            lastMonthRevenue,
+            percentageChange: Number(percentageChange.toFixed(2)),
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error: error.message
+        });
+    }
 };
 
 
