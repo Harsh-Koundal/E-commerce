@@ -7,6 +7,8 @@ const Overview = () => {
   const token = localStorage.getItem("token");
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(null);
+  const [totalProducts, setTotalProducts] = useState(null);
 
   useEffect(() => {
   const fetchOrders = async () => {
@@ -29,7 +31,6 @@ const Overview = () => {
   if (token) fetchOrders();
 }, [token]);
 
-useEffect(() => {
   const fetchTopProducts = async () => {
     try {
       const res = await axios.get(
@@ -42,14 +43,56 @@ useEffect(() => {
       const products = res.data.data || [];
       setProducts(products);
 
-      console.log("Orders loaded:", res);
     } catch (err) {
       console.error("Failed to load products:", err.response?.data || err.message);
       toast.error("Failed to load recent products");
     }
   };
 
-  if (token) fetchTopProducts();
+
+
+const fetchTotalProducts = async () => {
+  try {
+    const res = await axios.get(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/total-products`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setTotalProducts(res.data.totalProducts)
+      console.log(res.data);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/users`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setTotalUsers(res.data.data.data.length);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchUsers();
+
+
+  useEffect(() => {
+  if (!token) return;
+
+  fetchUsers();
+  fetchTopProducts();
+  fetchTotalProducts();
 }, [token]);
 
   return (
@@ -59,7 +102,7 @@ useEffect(() => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
             </div>
             <Users className="h-8 w-8 text-blue-500" />
           </div>
@@ -101,7 +144,7 @@ useEffect(() => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Products</p>
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{totalProducts}</p>
             </div>
             <Package className="h-8 w-8 text-orange-500" />
           </div>
@@ -155,9 +198,6 @@ useEffect(() => {
         {/* Left Side */}
         <div>
           <p className="font-medium capitalize">{item.subCategory}</p>
-          <p className="text-sm text-gray-600">
-            Ordered by: {item.lastUserName}
-          </p>
         </div>
 
         {/* Right Side */}
