@@ -181,67 +181,6 @@ const OrderPage = () => {
     }
   }, [subcategoryParam]);
 
-  // const onDrop = async (acceptedFiles) => {
-  //   if (!category || !subcategory) {
-  //     const errorMessage = "Invalid category or subcategory selection!";
-  //     console.error(errorMessage);
-  //     setError(errorMessage);
-  //     return;
-  //   }
-  //   setError(null);
-  //   setUploading(true);
-  //   const formData = new FormData();
-  //   acceptedFiles.forEach((file) => formData.append("files", file));
-  //   const filesize = acceptedFiles.reduce((total, file) => total + file.size, 0);
-  //   if (filesize > MAX_FILE_SIZE) {
-  //     setError("File size exceeds the maximum limit of 50MB.");
-  //     setUploading(false);
-  //     return;
-  //   }
-  //   try {
-  //     let newFiles = [];
-  //     for (const file of acceptedFiles) {
-  //       let count = 1;
-  //       if (file.type === "application/pdf") {
-  //         count = await getPdfPageCount(file);
-  //       }
-  //       newFiles.push({ file, pageCount: count });
-  //     }
-  //     let res = await axios.post(
-  //       `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/upload-files-legacy`,
-  //       formData,
-  //       {
-  //         headers: {
-  //           "Content-Type": "multipart/form-data",
-  //           Authorization: `Bearer ${token || vendorToken}`,
-  //         },
-  //         withCredentials: true,
-  //       }
-  //     );
-  //     console.log(res.data.data.files)
-  //     const uploadedFiles = res.data.data.files.map((f, idx) => ({
-  //       ...newFiles[idx],
-  //       name: f.name || newFiles[idx].file.name,
-  //       url: f.url, // Cloudinary URL
-  //     }));
-
-  //     setFiles((prev) => {
-  //       const updatedFiles = [...prev, ...uploadedFiles];
-  //       const totalPagesCount = updatedFiles.reduce(
-  //         (sum, f) => sum + (f.pageCount || 1),
-  //         0
-  //       );
-  //       setTotalPages(totalPagesCount);
-  //       return updatedFiles;
-  //     });
-  //   } catch (error) {
-  //     const message = error?.response?.data?.data?.message || "An unexpected error occurred";
-  //     console.error("Error uploading files:", message, error.response?.data?.data || error);
-  //     setError(message);
-  //   } finally {
-  //     setUploading(false);
-  //   }
-  // };
   const onDrop = async (acceptedFiles) => {
     if(!user) {
       toast.error("Please first login before uploading any pdf document")
@@ -345,28 +284,6 @@ const OrderPage = () => {
     setEstimatedCost(calculateEstimatedCost());
   }, [numCopies, colorType, paperType, binding, lamination, printedSides, totalPages, subcategoryParam]);
 
-  // const handlePlaceOrder = async () => {
-  //   setError(null);
-  //   setUploading(true);
-  //   if (!category || !category._id || files.length === 0) {
-  //     setError("Please upload files to proceed to checkout.");
-  //     return;
-  //   }
-  //   const orderDetails = {
-  //     categoryId: category._id,
-  //     subCategory: subcategory.id,
-  //     numCopies,
-  //     colorType,
-  //     paperType,
-  //     binding,
-  //     lamination,
-  //     printedSides,
-  //     totalPages,
-  //     estimatedCost,
-  //     files,
-  //   };
-  //   navigate("/checkout", { state: { orderDetails } });
-  // };
   const handlePlaceOrder = async () => {
     if(!user) {
       return toast.error("Please first login to proceed!")
@@ -404,43 +321,7 @@ const OrderPage = () => {
       setUploading(false);
     }
   };
-  
-  // const handleAddToCart = async () => {
-  //   if (!category || !category._id || files.length === 0) {
-  //     setError("Please upload files to add to cart.");
-  //     toast.error("Please upload file to proceed")
-  //     return;
-  //   }
-  //   console.log(files)
-  //   const payload = {
-  //     categoryType: "document",
-  //     categoryId: category._id,
-  //     name: category.name,
-  //     description: subcategory?.name || "Document Printing",
-  //     image: category.image,
-  //     unitCost: estimatedCost / (numCopies * totalPages || 1),
-  //     numCopies,
-  //     paperType,
-  //     binding,
-  //     lamination,
-  //     printedSides,
-  //     totalPages: totalPages > 0 ? totalPages : 1,
-  //     files: files.map((fileObj) => ({
-  //       name: fileObj.name,
-  //       url: fileObj.url,   // <-- Cloudinary URL
-  //       pageCount: fileObj.pageCount || 1,
-  //     })),
-  //   };
 
-  //   try {
-  //     console.log("item that is added to cart:", payload);
-  //     await addToCart(payload);
-  //     console.log("item added to cart")
-  //   } catch (err) {
-  //     console.error("Failed to add to cart:", err);
-  //     setError("Failed to add item to cart. Please try again.");
-  //   }
-  // };
   const handleAddToCart = async () => {
     if(!user) {
       return toast.error("Please first login to proceed!")
