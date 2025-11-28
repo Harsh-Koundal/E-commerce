@@ -1,5 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { getOnlineAgents } from "../controllers/agentContoller.js";
 import {
   registerAgent,
   loginAgent,
@@ -46,5 +47,6 @@ router.get("/notifications", authMiddleware, getNotifications);
 
 // Support
 router.post("/support/request", authMiddleware, contactSupport);
-
+//get online agents
+router.get("/onlineagents", authMiddleware, getOnlineAgents);
 export default router;
