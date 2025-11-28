@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
-import { getOnlineAgents } from "../controllers/agentContoller.js";
+import { getOnlineAgents } from "../controllers/agentController.js";
 import {
   registerAgent,
   loginAgent,

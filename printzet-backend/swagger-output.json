@@ -4045,6 +4045,16 @@
         }
       }
     },
+    "/api/agent/onlineagents": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/upload-files": {
       "post": {
         "description": "",
