@@ -25,7 +25,7 @@ const VerifyEmail = () => {
 
         if (response.status === 200) {
           setStatus("verified");
-          setTimeout(() => navigate("/email-verified"), 2000);
+          setTimeout(() => navigate("/email-verified"), 100);
         } else {
           setStatus("failed");
         }

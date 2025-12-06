@@ -10,6 +10,7 @@ import {
     CreditCard,
 } from "lucide-react";
 import api from "@/lib/api";
+import { useParams } from "react-router-dom";
 
 const AdminDocumentDashboard = () => {
     const [orders, setOrders] = useState([]);
@@ -19,7 +20,7 @@ const AdminDocumentDashboard = () => {
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [ordersPerPage] = useState(9);
-
+    const {id}=useParams();
     const [filters, setFilters] = useState({
         orderId: "",
         transactionId: "",
@@ -40,6 +41,7 @@ const AdminDocumentDashboard = () => {
                 const res = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/orders`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
+                // console.log(res)
                 setOrders(res.data.data);
                 setFilteredOrders(res.data.data);
             } catch (err) {
@@ -51,6 +53,21 @@ const AdminDocumentDashboard = () => {
         };
         fetchOrders();
     }, []);
+    const fetchOrderById = async (id) => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/admin/orders/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setSelectedOrder(res.data.data);
+            // console.log(res.data.data)
+        } catch (err) {
+            console.error("Error fetching orders:", err);
+            setError("Failed to load orders. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(() => {
         const filtered = orders.filter((order) => {
@@ -154,7 +171,10 @@ const AdminDocumentDashboard = () => {
                         {currentOrders.map((order) => (
                             <div
                                 key={order._id}
-                                onClick={() => setSelectedOrder(order)}
+                                onClick={() => {
+                                    // setSelectedOrder(order)
+                                    fetchOrderById(order?._id);
+                                }}
                                 className={`cursor-pointer border px-4 py-3 rounded-md mb-2 hover:bg-gray-100 transition ${selectedOrder?._id === order._id ? "bg-blue-50 border-blue-400" : "border-gray-200"
                                     }`}
                             >
@@ -253,7 +273,6 @@ const AdminDocumentDashboard = () => {
 
                                     {/* Cost */}
                                     <div className="flex items-center space-x-2">
-                                        <DollarSign className="w-4 h-4 text-green-600" />
                                         <div>
                                             <p className="text-xs text-gray-500">Total Cost</p>
                                             <p className="text-lg font-bold text-green-600">₹{selectedOrder.totalCost || 0}</p>

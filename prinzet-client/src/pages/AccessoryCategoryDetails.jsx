@@ -71,7 +71,6 @@ const AccessoryCategoryDetails = () => {
           image: response.data?.data?.image,
           name: response.data?.data?.name,
         });
-        console.log(accessories)
         setLoading(false);
       } catch (err) {
         setError("Failed to load accessory category. Please try again later.");

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -7,13 +7,16 @@ import query from "india-pincode-search";
 import { BeatLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import api from "@/lib/api";
+import InvoiceSummary from "@/components/Orders/Confirmations";
 
 const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { orders } = location.state || {};
-  // console.log(orders)
+  const { order } = location.state || {};
+
   const [loadingPayment, setLoadingPayment] = useState(false);
+  const [loadingAddress, setLoadingAddress] = useState(true);
+  const [loadingVendors, setLoadingVendors] = useState(false);
   const [error, setError] = useState(null);
   const [customer, setCustomer] = useState({
     name: "",
@@ -25,7 +28,41 @@ const CheckoutPage = () => {
     pincode: "",
   });
   const [selectedVendor, setSelectedVendor] = useState(null);
-  const [loadingVendors, setLoadingVendors] = useState(false);
+
+  // Fetch user's saved address on component mount
+  useEffect(() => {
+    const fetchUserAddress = async () => {
+      try {
+        const response = await api.get(
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/auth/user/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (response.data?.data) {
+          const userData = response.data.data;
+          setCustomer((prev) => ({
+            ...prev,
+            name: userData.fullName || "",
+            email: userData.email || "",
+            phone: userData.mobile || "",
+            address: userData.address[0]?.address || "",
+            city: userData.address[0]?.city || "",
+            state: userData.address[0]?.state || "",
+            pincode: userData.address[0]?.pincode || "",
+          }));
+        }
+      } catch (err) {
+        console.error("No saved address found or error fetching address:", err);
+      } finally {
+        setLoadingAddress(false);
+      }
+    };
+
+    fetchUserAddress();
+  }, []);
 
   const handleInputChange = (e) => {
     setCustomer({ ...customer, [e.target.name]: e.target.value });
@@ -49,11 +86,11 @@ const CheckoutPage = () => {
           city: details[0].district || details[0].city,
           state: details[0].state,
         }));
-
-
-        // fetchVendors(pincode);
+        // Fetch vendors for this pincode
+        fetchVendors(pincode);
       } else {
         toast.error("Invalid pincode. Please enter a valid Indian pincode.");
+        setSelectedVendor(null);
       }
     }
   };
@@ -64,7 +101,7 @@ const CheckoutPage = () => {
       const response = await axios.get(
         `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/vendor/vendors?pincode=${pincode}`
       );
-      if (response.data.data.vendors.length > 0) {
+      if (response.data?.data?.vendors?.length > 0) {
         setSelectedVendor(response.data.data.vendors[0]);
       } else {
         toast.warn("No vendor found for this pincode.");
@@ -78,43 +115,42 @@ const CheckoutPage = () => {
       setLoadingVendors(false);
     }
   };
-  const totalPaidAmount = orders.reduce(
-    (sum, item) => sum + (item?.estimatedCost || item?.totalCost || 0),
-    0
-  );
 
   // const placeOrder = async () => {
-  //   console.log("Placing order with details:", { orders, customer, selectedVendor });
+  //   if (!selectedVendor) {
+  //     setError("Please select a valid pincode with available vendors.");
+  //     toast.error("No vendor available for this location.");
+  //     return;
+  //   }
+
   //   setLoadingPayment(true);
   //   setError(null);
 
-  //   // if (!selectedVendor) {
-  //   //   setError("No vendor available for the selected pincode.");
-  //   //   toast.error("No vendor available for the selected pincode.");
-  //   //   setLoadingPayment(false);
-  //   //   return;
-  //   // }
-
   //   try {
   //     const formData = new FormData();
-  //     for (const key in orders) {
-  //       if (key === "files" && Array.isArray(orders.files)) {
-  //         orders.files.forEach((file) => formData.append("files", file));
+
+  //     for (const key in order) {
+  //       if (key === "files" && Array.isArray(order.files)) {
+  //         order.files.forEach(file => formData.append("files", file.file || file));
   //       } else {
-  //         formData.append(key, orders[key]);
+  //         formData.append(key, order[key]);
   //       }
   //     }
+
+
   //     for (const key in customer) {
   //       formData.append(`customerDetails[${key}]`, customer[key]);
   //     }
-  //     // formData.append("vendorId", selectedVendor._id);
-  //     console.log("Form Data Entries:", formData);
-  //     const response = await api.post("/orders/place-order", formData, {
+
+  //     // Add vendor ID
+  //     formData.append("vendorId", selectedVendor._id);
+
+  //     const response = await api.post("/order/place-order", formData, {
   //       headers: { "Content-Type": "multipart/form-data" },
   //     });
-  //     console.log("Order Response:", response.data);
 
   //     if (response.data?.data?.url) {
+  //       setOrderPlaced(true);
   //       window.location.href = response.data.data.url;
   //     } else {
   //       toast.error("Failed to initiate payment.");
@@ -123,7 +159,7 @@ const CheckoutPage = () => {
   //     const message =
   //       error.response?.data?.data?.message ||
   //       "An unexpected error occurred while placing the order";
-  //     console.error("Error placing order:", message, error.response?.data.data || error);
+  //     console.error("Error placing order:", message);
   //     setError(message);
   //     toast.error(message);
   //   } finally {
@@ -131,45 +167,79 @@ const CheckoutPage = () => {
   //   }
   // };
   const placeOrder = async () => {
-    console.log("Placing order with details:", { orders, customer, selectedVendor });
-    setLoadingPayment(true);
-    setError(null);
+  setLoadingPayment(true);
+  setError(null);
 
-    try {
-      const payload = {
-        orders: [...orders],
-        customerDetails: customer,
-        vendorId: selectedVendor?._id || null
-      };
+  try {
+    const formData = new FormData();
 
-      console.log("Order Payload:", payload);
-
-      const response = await api.post("/orders/place-order", payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-      console.log("Order Response:", response.data);
-
-      if (response.data?.data?.url) {
-        window.location.href = response.data.data.url;
+    Object.keys(order).forEach((key) => {
+      if (key === "files") {
+        order.files.forEach((fileObj, idx) => {
+          formData.append(`orders[0][files][${idx}][url]`, fileObj.url);
+          formData.append(`orders[0][files][${idx}][pageCount]`, fileObj.pageCount || 1);
+          formData.append(`orders[0][files][${idx}][originalname]`, fileObj.name);
+        });
       } else {
-        toast.error("Failed to initiate payment.");
+        formData.append(`orders[0][${key}]`, order[key]);
       }
-    } catch (error) {
-      const message =
-        error.response?.data?.data?.message ||
-        "An unexpected error occurred while placing the order";
-      console.error("Error placing order:", message, error.response?.data?.data || error);
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoadingPayment(false);
-    }
-  };
+    });
 
-  if (!orders) {
+    Object.keys(customer).forEach((key) => {
+      formData.append(`customerDetails[${key}]`, customer[key]);
+    });
+
+    const response = await api.post("/orders/place-order", formData, {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  },
+});
+
+const orderId = response.data?.data?.orders?.[0]?.orderId;
+const paymentUrl = response.data?.data?.url;
+
+
+if (orderId) {
+  navigate("/confirm-order", {
+  state: {
+    orderId,
+    order,
+    customer,
+    paymentUrl
+  }
+});
+
+} else {
+  toast.error("Order ID missing. Cannot continue.");
+}
+
+
+  } catch (error) {
+    const message =
+      error.response?.data?.data?.message ||
+      "An unexpected error occurred while placing the order";
+
+    console.error("Error placing order:", message);
+    setError(message);
+    toast.error(message);
+  } finally {
+    setLoadingPayment(false);
+  }
+};
+
+
+  if (!order) {
     return (
       <div className="h-screen flex items-center justify-center text-gray-700">
         <p>No order details available. Please go back and try again.</p>
+      </div>
+    );
+  }
+
+  if (loadingAddress) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <BeatLoader color="#2563eb" size={12} />
       </div>
     );
   }
@@ -178,54 +248,60 @@ const CheckoutPage = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 bg-white shadow-2xl rounded-xl p-8">
         {/* Order Summary */}
-        {/* <div className="border p-6 rounded-lg shadow-md bg-blue-50">
-          <h2 className="text-2xl font-bold mb-4 text-blue-700">Order Summary</h2>
+        <div className="border p-6 rounded-lg shadow-md bg-blue-50">
+          <h2 className="text-2xl font-bold mb-4 text-blue-700">
+            Order Summary
+          </h2>
           <p className="text-lg font-semibold text-gray-700">
             Total Cost:{" "}
             <span className="text-blue-600 font-bold">
               ₹
-              {orders.estimatedCost
-                ? parseFloat(orders.estimatedCost).toFixed(2)
+              {order.estimatedCost
+                ? parseFloat(order.estimatedCost).toFixed(2)
                 : "N/A"}
             </span>
           </p>
           <p className="text-gray-700">
-            Copies: <span className="font-semibold">{orders.numCopies}</span>
+            Copies:{" "}
+            <span className="font-semibold">{order.numCopies}</span>
           </p>
           <p className="text-gray-700">
-            Print Type: <span className="font-semibold">{orders.colorType}</span>
+            Print Type:{" "}
+            <span className="font-semibold">{order.colorType}</span>
           </p>
-          {orders.paperType && (
+          {order.paperType && (
             <p className="text-gray-700">
               Paper Type:{" "}
-              <span className="font-semibold">{orders.paperType}</span>
+              <span className="font-semibold">{order.paperType}</span>
             </p>
           )}
-          {orders.binding && (
+          {order.binding && (
             <p className="text-gray-700">
-              Binding: <span className="font-semibold">{orders.binding}</span>
+              Binding:{" "}
+              <span className="font-semibold">{order.binding}</span>
             </p>
           )}
-          {orders.lamination && (
+          {order.lamination && (
             <p className="text-gray-700">
               Lamination:{" "}
-              <span className="font-semibold">{orders.lamination}</span>
+              <span className="font-semibold">{order.lamination}</span>
             </p>
           )}
-          {orders.printedSides && (
+          {order.printedSides && (
             <p className="text-gray-700">
               Printed Sides:{" "}
-              <span className="font-semibold">{orders.printedSides}</span>
+              <span className="font-semibold">{order.printedSides}</span>
             </p>
           )}
           <p className="text-gray-700">
-            Total Pages: <span className="font-semibold">{orders.totalPages}</span>
+            Total Pages:{" "}
+            <span className="font-semibold">{order.totalPages}</span>
           </p>
-          {orders.files && orders.files.length > 0 && (
+          {order.files && order.files.length > 0 && (
             <div>
               <p className="text-gray-700 mt-2">Files:</p>
               <ul className="list-disc pl-5">
-                {orders.files.map((file, index) => (
+                {order.files.map((file, index) => (
                   <li key={index} className="text-sm text-gray-600">
                     {file.name}
                   </li>
@@ -233,93 +309,52 @@ const CheckoutPage = () => {
               </ul>
             </div>
           )}
-        </div> */}
-        {/* Order Summary */}
-        <div className="border p-6 rounded-lg shadow-md bg-blue-50">
-          <h2 className="text-2xl font-bold mb-4 text-blue-700">Order Summary</h2>
-          <div>
-            <p className="text-lg font-bold text-gray-700">Total Cost: {totalPaidAmount.toFixed(2)}</p>
-          </div>
-          {orders?.length > 0 && orders?.map((item, index) => (
-            <div key={item.id || index} className="mb-6 border-b pb-4 last:border-none">
-              <h3 className="text-md font-semibold text-gray-800 mb-2">
-                Product {index + 1}: {item?.name}
-              </h3>
-
-              <p className="text-gray-700">
-                Cost:
-                <span className="text-blue-600 font-bold">
-                  ₹{item?.estimatedCost?.toFixed(2) || item?.totalCost?.toFixed(2)}
-                </span>
-              </p>
-
-              <p className="text-gray-700">
-                Copies: <span className="font-semibold">{item?.numCopies}</span>
-              </p>
-
-              {item.paperType && (
-                <p className="text-gray-700">
-                  Paper Type: <span className="font-semibold">{item?.paperType}</span>
-                </p>
-              )}
-
-              {item.binding && (
-                <p className="text-gray-700">
-                  Binding: <span className="font-semibold">{item?.binding}</span>
-                </p>
-              )}
-              <p className="text-gray-700">
-                Print Type: <span className="font-semibold">{item?.colorType || "None"}</span>
-              </p>
-              {item.lamination && (
-                <p className="text-gray-700">
-                  Lamination: <span className="font-semibold">{item?.lamination}</span>
-                </p>
-              )}
-
-              {item.printedSides && (
-                <p className="text-gray-700">
-                  Printed Sides: <span className="font-semibold">{item?.printedSides}</span>
-                </p>
-              )}
-
-              <p className="text-gray-700">
-                Total Pages: <span className="font-semibold">{item?.totalPages}</span>
-              </p>
-
-              {item.files && item.files.length > 0 && (
-                <div>
-                  <p className="text-gray-700 mt-2">Uploaded Document:</p>
-                  <ul className="list-disc pl-5">
-                    {item.files.map((file, index) => (
-                      <li key={index} className="text-sm text-gray-600">
-                        {file.name || file.originalname}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
         </div>
-
 
         {/* Shipping Details */}
         <div className="border p-6 rounded-lg shadow-md bg-white">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">Shipping Details</h2>
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">
+            Shipping Details
+          </h2>
           {error && <p className="text-red-500 mb-4">{error}</p>}
+          {loadingVendors && (
+            <p className="text-blue-500 mb-4">Finding vendors...</p>
+          )}
+          {selectedVendor && (
+            <p className="text-green-600 mb-4 font-semibold">
+              ✓ Vendor selected for your area
+            </p>
+          )}
           <div className="space-y-4">
-            {["name", "email", "address"].map((field) => (
-              <input
-                key={field}
-                type={field === "email" ? "email" : "text"}
-                name={field}
-                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ))}
+            <input
+              type="text"
+              name="name"
+              placeholder="Name"
+              value={customer.name}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={customer.email}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <input
+              type="text"
+              name="address"
+              placeholder="Address"
+              value={customer.address}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
 
             <PhoneInput
               country={"in"}
@@ -361,13 +396,21 @@ const CheckoutPage = () => {
             />
           </div>
 
-          <button
-            onClick={placeOrder}
-            disabled={ loadingPayment || !orders.some(order => order.files && order.files.length > 0)}
-            className="mt-6 w-full px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
-          >
-            {loadingPayment ? <BeatLoader color="white" size={8} /> : "Place Order"}
-          </button>
+<div className="p-6">
+  <button
+    onClick={placeOrder}
+    disabled={loadingPayment || !order?.files?.length || loadingVendors}
+    className="mt-6 w-full px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    {loadingPayment ? (
+      <BeatLoader color="white" size={8} />
+    ) : (
+      "Place Order"
+    )}
+  </button>
+</div>
+
+
         </div>
       </div>
     </div>

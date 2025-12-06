@@ -18,34 +18,6 @@ const pathNameMap = {
     label: "3D Infra Design",
     link: "/category/3d-infra-design",
   },
-  "stationery-printing": {
-    label: "Stationery Printing",
-    link: "/stationery",
-  },
-  "stamps-printing": {
-    label: "Stamps & Inks",
-    link: "/stationery",
-  },
-  "poster-printing": {
-    label: "Posters, Signs & Mousepads",
-    link: "/posters",
-  },
-  "labels-printing": {
-    label: "Labels, Stickers & Packaging",
-    link: "/packaging",
-  },
-  "clothing-printing": {
-    label: "Clothing, Caps & Bags",
-    link: "/clothing",
-  },
-  "mugs-printing": {
-    label: "Mugs, Albums & Gifts",
-    link: "/acessories",
-  },
-  "drinkware-printing": {
-    label: "Custom Drinkware",
-    link: "/drinkware",
-  },
 };
 
 const formatSegment = (segment) =>
