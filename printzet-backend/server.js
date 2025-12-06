@@ -61,6 +61,7 @@ app.use(
         "https://www.printzet.com",
         "http://localhost:5173",
         "http://localhost:3020",
+        "http://localhost:5025",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);

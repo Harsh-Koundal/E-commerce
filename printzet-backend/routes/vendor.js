@@ -20,7 +20,7 @@ router.get("/vendors", getVendorsByPincode);
 // PATCH /api/vendor/order/:orderId/completed
 router.patch("/order/:orderId/completed", vendorAuth, markOrderAsCompleted);
 
-router.patch("/order/:orderId/approve", vendorAuth, approveOrder);
+router.patch("/order/:orderId/confirm", vendorAuth, approveOrder);
 
 router.patch("/order/:orderId/reject", vendorAuth, rejectOrder);
 

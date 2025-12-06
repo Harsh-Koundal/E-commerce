@@ -163,13 +163,12 @@ router.get("/user/profile", authMiddleware, async (req, res) => {
 // ---------------------- Update Profile ----------------------
 router.put("/user/profile", authMiddleware, async (req, res) => {
   try {
-    const { fullName, mobile, email } = req.body;
+    const { fullName, mobile } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return sendResponse(res, 404, "User not found", "error");
 
     user.fullName = fullName || user.fullName;
     user.mobile = mobile || user.mobile;
-    user.email = email || user.email;
     await user.save();
 
     return sendResponse(res, 200, "Profile updated", "success", user);

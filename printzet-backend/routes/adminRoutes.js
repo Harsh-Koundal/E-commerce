@@ -2,7 +2,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { adminMiddleware } from "../middleware/adminMiddleware.js";
-import { assignVendorToOrder, getAccessoryOrderById, getAllAccessoryOrders, getAllOrders, getAllUsers, getAllVendors, getOrderById, getRevenue, getTopProducts, getTotalProducts, updateUserAddress } from "../controllers/adminController.js";
+import { assignVendorToOrder, getAccessoryOrderById, getAllAccessoryOrders, getAllOrders, getAllUsers, getAllVendors, getOrderById, updateUserAddress } from "../controllers/adminController.js";
 
 import { createServiceCategory, getAllServiceCategories, getServiceCategoryById, updateServiceCategory, deleteServiceCategory } from "../controllers/serviceCategory.controller.js";
 import { documentUpload } from "../middleware/multer.middleware.js";
@@ -21,15 +21,9 @@ router.get("/users", authMiddleware, adminMiddleware, getAllUsers);
 
 // ✅ GET all document printing orders (Admin Only)
 router.get("/orders", authMiddleware, adminMiddleware, getAllOrders);
+router.get("/orders/:id", authMiddleware, adminMiddleware, getOrderById);
 router.post("/orders/:id/assign-vendor", authMiddleware, adminMiddleware, assignVendorToOrder);
 
-// Get revenue 
-router.get('/revenue',authMiddleware,adminMiddleware,getRevenue)
-// Get total products
-router.get('/total-products',authMiddleware,adminMiddleware,getTotalProducts);
-
-// Get top products
-router.get('/top-products',authMiddleware,adminMiddleware,getTopProducts);
 
 
 // ✅ GET all accessory printing orders (Admin Only)

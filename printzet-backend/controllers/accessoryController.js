@@ -1,23 +1,6 @@
 import AccessoryCategory from "../models/AccessoryCategory.js";
 import sendResponse from "../utils/sendResponse.js";
 
-const getDocumentCategory = async (req, res) => {
-    try {
-      const documentCategory = await AccessoryCategory.findOne({
-        id: "documents-printing",
-      });  
-      if (!documentCategory) {
-        console.log("Category not found!");
-        return sendResponse(res, 404, "Accessory category not found", "error");
-      }
-      return sendResponse(res, 200, "Accessory category fetched", "success", documentCategory);
-    } catch (error) {
-      console.error("Error fetching accessory category:", error);
-      return sendResponse(res, 500, "Error fetching accessory category", "error", error);
-    }
-}
-
-export { getDocumentCategory };
 
 const getClothingCategory = async (req, res) => {
     try {

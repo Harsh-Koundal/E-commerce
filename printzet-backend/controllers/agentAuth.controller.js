@@ -30,12 +30,13 @@ export const registerAgent = async (req, res) => {
     }
 
     // 2️⃣ Create Agent
-    const agent = await Agent.create({
+ const agent = await Agent.create({
   name,
   phone,
   password,
   vehicle,
   agentId: uuidv4(), // generates unique id
+  status: "online",   // ✅ default
 });
 
     // 3️⃣ Ensure User entry exists for middleware

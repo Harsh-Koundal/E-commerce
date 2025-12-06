@@ -107,7 +107,7 @@ const OrderSchema = new mongoose.Schema(
         },
         vendorStatus:{
             type: String,
-            enum: ['pending', 'accepted', 'rejected'],
+            enum: ['confirmed', 'accepted', 'rejected','pending'],
             default: 'pending',
         },
         assignedAgent: { 
