@@ -48,6 +48,223 @@ export default function AdminDashboard() {
     { id: "settings", name: "Settings", icon: Settings, path: "/admin/dashboard/settings" },
   ];
 
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [viewingOrder, setViewingOrder] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleStatusChange = (orderId, newStatus) => {
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
+  };
+
+  const saveEdit = () => {
+    setEditingOrderId(null);
+  };
+
+  const renderOverview = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">2,847</p>
+            </div>
+            <Users className="h-8 w-8 text-blue-500" />
+          </div>
+          <div className="flex items-center mt-2 text-sm text-green-600">
+            <TrendingUp className="h-4 w-4 mr-1" />
+            <span>+12% from last month</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Orders</p>
+              <p className="text-2xl font-bold text-gray-900">1,234</p>
+            </div>
+            <ShoppingBag className="h-8 w-8 text-green-500" />
+          </div>
+          <div className="flex items-center mt-2 text-sm text-green-600">
+            <TrendingUp className="h-4 w-4 mr-1" />
+            <span>+8% from last month</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Revenue</p>
+              <p className="text-2xl font-bold text-gray-900">$45,678</p>
+            </div>
+            <DollarSign className="h-8 w-8 text-purple-500" />
+          </div>
+          <div className="flex items-center mt-2 text-sm text-green-600">
+            <TrendingUp className="h-4 w-4 mr-1" />
+            <span>+15% from last month</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Products</p>
+              <p className="text-2xl font-bold text-gray-900">567</p>
+            </div>
+            <Package className="h-8 w-8 text-orange-500" />
+          </div>
+          <div className="flex items-center mt-2 text-sm text-green-600">
+            <TrendingUp className="h-4 w-4 mr-1" />
+            <span>+5% from last month</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-semibold mb-4">Recent Orders</h3>
+          <div className="space-y-4">
+            {orders.slice(0, 5).map((order) => (
+              <div
+                key={order.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
+                <div>
+                  <p className="font-medium">{order.id}</p>
+                  <p className="text-sm text-gray-600">{order.customer}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">${order.total}</p>
+                  <span
+                    className={`inline-block px-2 py-1 text-xs rounded-full ${
+                      order.status === "Delivered"
+                        ? "bg-green-100 text-green-800"
+                        : order.status === "Processing"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-semibold mb-4">Top Products</h3>
+          <div className="space-y-4">
+            {products.slice(0, 5).map((product) => (
+              <div
+                key={product.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
+                <div>
+                  <p className="font-medium">{product.name}</p>
+                  <p className="text-sm text-gray-600">{product.category}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">${product.price}</p>
+                  <p className="text-sm text-gray-600">
+                    Stock: {product.stock}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  function renderUserManagement() {
+    return (
+      <div>
+        <UserManagement />
+      </div>
+    );
+  }
+
+  const renderProductManagement = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <h2 className="text-2xl font-bold">Product Management</h2>
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Product
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <div
+            key={product.id}
+            className="bg-white rounded-lg shadow-sm border p-6"
+          >
+            <div className="aspect-w-16 aspect-h-9 mb-4">
+              <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                <Package className="h-8 w-8 text-gray-400" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">{product.name}</h3>
+              <p className="text-sm text-gray-600">{product.category}</p>
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-bold text-blue-600">
+                  ${product.price}
+                </span>
+                <span className="text-sm text-gray-600">
+                  Stock: {product.stock}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    product.status === "Active"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {product.status}
+                </span>
+                <div className="flex gap-2">
+                  <button className="text-blue-600 hover:text-blue-800">
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button className="text-red-600 hover:text-red-800">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const OrderManagement = ({ isMobile, children }) => {
+    return (
+      <div>
+        <AdminOrderManagement isMobile={isMobile}>
+          {children}
+        </AdminOrderManagement>
+      </div>
+    );
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleModuleClick = (module) => {
@@ -223,4 +440,4 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-}
+};

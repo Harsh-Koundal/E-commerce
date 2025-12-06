@@ -18,17 +18,9 @@ const Header = () => {
   const [isVendorLoggedIn, setIsVendorLoggedIn] = useState(
     !!localStorage.getItem("vendorInfo")
   );
-const [vendorName, setVendorName] = useState(() => {
-  const raw = localStorage.getItem("vendorInfo");
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed?.pressName || "";
-  } catch (err) {
-    console.error("❌ JSON Parse error in Header for vendorInfo:", err);
-    return "";
-  }
-});
-
+  const [vendorName, setVendorName] = useState(
+    JSON.parse(localStorage.getItem("vendorInfo"))?.pressName || ""
+  );
   const navigate = useNavigate();
 
   const { cart } = useCart();
@@ -40,30 +32,19 @@ const [vendorName, setVendorName] = useState(() => {
   const sidebarRef = useRef(null);
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
   useEffect(() => {
-  const raw = localStorage.getItem("vendorInfo");
-  let vendor = null;
-  if (raw && raw !== "undefined" && raw !== "null") {
-    try {
-      vendor = JSON.parse(raw);
-    } catch (err) {
-      console.error("Invalid vendorInfo in localStorage:", err);
-      vendor = null;
+    const vendor = JSON.parse(localStorage.getItem("vendorInfo"));
+    if (user && user?.isAdmin) {
+      setIsAdmin(true);
+      setIsVendorLoggedIn(false);
+    } else if (vendor) {
+      setVendorName(vendor.pressName);
+      setIsVendorLoggedIn(true);
+      setIsAdmin(false);
+    } else {
+      setIsAdmin(false);
+      setIsVendorLoggedIn(false);
     }
-  }
-
-  if (user && user?.isAdmin) {
-    setIsAdmin(true);
-    setIsVendorLoggedIn(false);
-  } else if (vendor) {
-    setVendorName(vendor.pressName || "");
-    setIsVendorLoggedIn(true);
-    setIsAdmin(false);
-  } else {
-    setIsAdmin(false);
-    setIsVendorLoggedIn(false);
-  }
-}, [user]);
-
+  }, [user]);
   const handleLogout = () => {
     logout();
     localStorage.removeItem("vendorInfo");
@@ -100,8 +81,8 @@ const [vendorName, setVendorName] = useState(() => {
   const dashboardPath = isAdmin
     ? "/admin/dashboard"
     : isVendorLoggedIn
-      ? "/vendor/dashboard"
-      : "/user/dashboard";
+    ? "/vendor/dashboard"
+    : "/user/dashboard";
 
   return (
     <nav className="bg-white shadow left-0 w-full z-50 sticky top-0">

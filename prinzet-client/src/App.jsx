@@ -69,6 +69,7 @@ import PaymentsPage from "./components/Admin-Dashboard/PaymentPage";
 import ReportsPage from "./components/Admin-Dashboard/ReportPage";
 import TransactionsPage from "./components/Admin-Dashboard/TransactionPage";
 import EditBlog from "./components/Admin-Dashboard/EditBlog";
+import InvoiceSummary from "./components/Orders/Confirmations";
 
 
 // Custom Protected Route for Admin and Authorized Vendors
@@ -172,9 +173,9 @@ function App() {
         <Route
           path="/order-page/accessory-printing"
           element={
-            <UserProtectedRoute>
+            //<UserProtectedRoute>
             <AccessoryOrderPage />
-            </UserProtectedRoute>
+            //</UserProtectedRoute>
           }
         />
         <Route
@@ -193,6 +194,8 @@ function App() {
             </UserProtectedRoute>
           }
         />
+        <Route path="/confirm-order" element={
+          <InvoiceSummary />} />
         <Route
           path="/accessory-checkout"
           element={
@@ -222,35 +225,19 @@ function App() {
         />
         <Route
           path="/admin/dashboard"
-          element={
-            <AdminProtectedRoute>
-             <AdminDashboard />
-            </AdminProtectedRoute>
-          }
+          element={<AdminDashboard />}
         />
         <Route
           path="/admin/finance/payments"
-          element={
-            <AdminProtectedRoute>
-          <PaymentsPage />
-            </AdminProtectedRoute>
-        }
+          element={<PaymentsPage />}
         />
         <Route
           path="/admin/finance/reports"
-          element={
-            <AdminProtectedRoute>
-              <ReportsPage />
-            </AdminProtectedRoute>
-        }
+          element={<ReportsPage />}
         />
         <Route
           path="/admin/finance/transactions"
-          element={
-            <AdminProtectedRoute>
-          <TransactionsPage />
-            </AdminProtectedRoute>
-          }
+          element={<TransactionsPage />}
         />
         <Route
           path="/admin/document-orders"

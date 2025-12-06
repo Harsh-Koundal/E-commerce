@@ -17,7 +17,7 @@ export default function DocumentPrinting() {
     const fetchCategories = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/accessorycategories/document-printing`
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/categories/document-printing`
         );
         const subcats =
           response.data?.data?.subcategories ||

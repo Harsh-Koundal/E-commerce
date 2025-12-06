@@ -25,7 +25,7 @@ const categoriesTop = [
     name: "Documents",
     img: documentsImg,
     dropdown: [
-      { name: "Document Printing", redirect: "/category/document-printing" },
+      { name: "Document Printing", redirect: "/document-printing" },
       { name: "Letterhead Printing", redirect: "/stationery" },
       { name: "Certificate Printing", redirect: "/document-printing" },
       { name: "Notebook Printing", redirect: "/stationery" },
@@ -35,7 +35,7 @@ const categoriesTop = [
       { name: "Leaflet/Flyer/Pamphlet", redirect: "/posters" },
       { name: "Photo Album Printing", redirect: "/acessories" },
     ],
-    redirect: "/category/document-printing",
+    redirect: "/document-printing",
   },
   {
     name: "Accessory Printing",

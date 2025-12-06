@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import AuthContext from "../context/AuthContext";
-import { FiGrid, FiUser, FiFileText, FiMessageCircle, FiSettings, FiMail, FiPhone, FiMapPin, FiSave, FiLock, FiCheckCircle, FiPackage, } from "react-icons/fi";
+import { FiGrid, FiUser, FiFileText, FiMessageCircle, FiSettings, FiMail, FiPhone, FiMapPin, FiSave, FiLock, FiCheckCircle, FiPackage, FiTrash, FiTrash2, } from "react-icons/fi";
 import { motion } from "framer-motion";
 import {
   Edit3,
@@ -16,25 +16,6 @@ import { toast } from "react-toastify";
 import axios from "axios";
 
 import { getData, postData, updateData } from "@/lib/api";
-
-
-const deleteData = async (endpoint) => {
-  try {
-    const response = await axios.delete(
-      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api${endpoint}`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data.data;
-  } catch (error) {
-    console.error(`DELETE ${endpoint} error:`, error);
-    throw error;
-  }
-};
 
 const UserDashboard = () => {
   const [activePage, setActivePage] = useState(() => {
@@ -66,6 +47,8 @@ const UserDashboard = () => {
     email: "",
     password: "",
     mobile: "",
+    oldPassword: "",
+    newPassword: "",
   });
 
   const [orders, setOrders] = useState([]);
@@ -94,14 +77,21 @@ const UserDashboard = () => {
 
   const [supportText, setSupportText] = useState("");
   const [message, setMessage] = useState([]);
-
+// handel when user logout 
   const handleLogout = () => {
     try {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
 
       setUser({});
-      setEditData({ fullName: "", email: "", password: "", mobile: "" });
+      setEditData({
+        fullName: "",
+        email: "",
+        mobile: "",
+        oldPassword: "",
+        newPassword: "",
+      });
+
       setOrders([]);
       setAddressList([]);
       setSelectedOrder(null);
@@ -120,7 +110,7 @@ const UserDashboard = () => {
       navigate("/");
     }
   };
-
+// fetch profile
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -145,8 +135,10 @@ const UserDashboard = () => {
           fullName: profileData.fullName || "",
           email: profileData.email || "",
           mobile: profileData.mobile || "",
-          password: "",
+          oldPassword: "",
+          newPassword: "",
         });
+
 
         console.log(profileData)
       } catch (error) {
@@ -174,7 +166,7 @@ const UserDashboard = () => {
       navigate("/login");
     }
   }, [navigate]);
-
+//  fetch orders
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -187,7 +179,7 @@ const UserDashboard = () => {
           }
         );
         console.log("orders :", res.data)
-        const ordersArray = res.data?.data.orders || [];
+        const ordersArray = res.data?.data || [];
         setOrders(ordersArray);
       } catch (error) {
         console.error(
@@ -202,7 +194,7 @@ const UserDashboard = () => {
     fetchOrders();
   }, []);
 
-
+// fetch Address
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
@@ -236,69 +228,78 @@ const UserDashboard = () => {
   }, []);
 
 
-  // Profile update handler with comprehensive validation
-const handleProfileUpdate = async (e) => {
-  e.preventDefault();
+  // Profile update handler 
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
 
-  // Validation
-  if (!editData.fullName?.trim()) {
-    toast.error("Full name is required");
-    return;
-  }
-
-  if (
-    editData.mobile &&
-    !/^\d{10}$/.test(editData.mobile.replace(/\D/g, ""))
-  ) {
-    toast.error("Please enter a valid 10-digit mobile number");
-    return;
-  }
-
-  try {
-    const updatePayload = {
-      fullName: editData.fullName.trim(),
-      email:editData.email.trim(),
-      mobile: editData.mobile?.trim() || "",
-    };
-
-    const response = await updateData("/auth/user/profile", updatePayload);
-
-    const updatedUser = response?.data || response;
-
-    toast.success("Profile updated successfully!");
-
-    // Update UI
-    setUser((prev) => ({
-      ...prev,
-      name: updatedUser.fullName || editData.fullName,
-      email:updatedUser.email || editData.email,
-      mobile: updatedUser.mobile || editData.mobile,
-    }));
-
-    // Sync edit form
-    setEditData((prev) => ({
-      ...prev,
-      fullName: updatedUser.fullName,
-      email: updatedUser.email,
-      mobile: updatedUser.mobile,
-    }));
-
-    setEditingProfile(false);
-
-  } catch (error) {
-    console.error("Profile update error:", error);
-
-    if (error.response?.status === 400) {
-      toast.error(error.response.data?.message || "Invalid input data");
-    } else if (error.response?.status === 404) {
-      toast.error("User not found. Please login again.");
-      localStorage.removeItem("token");
-      navigate("/login");
-    } else {
-      toast.error("Failed to update profile. Please try again.");
+    // Validation
+    if (!editData.fullName?.trim()) {
+      toast.error("Full name is required");
+      return;
     }
-  }
-};
+
+    if (
+      editData.mobile &&
+      !/^\d{10}$/.test(editData.mobile.replace(/\D/g, ""))
+    ) {
+      toast.error("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    try {
+      const updatePayload = {
+        fullName: editData.fullName.trim(),
+        mobile: editData.mobile?.trim() || "",
+      };
+
+      if (editData.oldPassword.trim() && editData.newPassword.trim()) {
+        updatePayload.oldPassword = editData.oldPassword.trim();
+        updatePayload.newPassword = editData.newPassword.trim();
+      }
+
+      const response = await axios.patch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/auth/profile`, updatePayload,{
+        headers:{
+          Authorization:`Bearer ${localStorage.getItem("token")}`,
+        }
+      });
+      const updatedUser = response?.data?.user || response?.user;
+
+      toast.success("Profile updated successfully!");
+
+      // Update UI
+      setUser((prev) => ({
+        ...prev,
+        name: updatedUser.fullName || editData.fullName,
+        mobile: updatedUser.mobile || editData.mobile,
+        email: prev.email,
+      }));
+
+      // Sync edit form
+      setEditData((prev) => ({
+        ...prev,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        mobile: updatedUser.mobile,
+        oldPassword: "",
+        newPassword: "",
+      }));
+
+      setEditingProfile(false);
+
+    } catch (error) {
+      console.error("Profile update error:", error);
+
+      if (error.response?.status === 400) {
+        toast.error(error.response.data?.message || "Invalid input data");
+      } else if (error.response?.status === 404) {
+        toast.error("User not found. Please login again.");
+        localStorage.removeItem("token");
+        navigate("/login");
+      } else {
+        toast.error("Failed to update profile. Please try again.");
+      }
+    }
+  };
 
 
   // Enhanced address handlers with better UX
@@ -375,44 +376,44 @@ const handleProfileUpdate = async (e) => {
       }
     }
   };
-
-  const handleDeleteAddress = async (index) => {
-    if (!window.confirm("Are you sure you want to delete this address?")) {
-      return;
-    }
+//  delete address
+  const handleDeleteAddress = async (addressId) => {
+    if (!window.confirm("Are you sure you want to delete this address?")) return;
 
     try {
-      await updateData("/auth/user/profile", editData);
-      toast.success("Profile updated successfully!");
-      setUser({
-        name: editData.fullName,
-        email: editData.email,
-        password: editData.password,
-        mobile: editData.mobile,
-      });
-      setEditingProfile(false);
+      await axios.delete(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/auth/user/address/${addressId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      toast.success("Address deleted successfully!");
+      
+      // address list
+      const updatedAddresses = await getData("/auth/user/address");
+      console.log(updatedAddresses)
+
+      let addresses = [];
+      if (Array.isArray(updatedAddresses)) addresses = updatedAddresses;
+      else if (updatedAddresses?.data) addresses = updatedAddresses.data;
+      else if (updatedAddresses?.address) addresses = updatedAddresses.address;
+
+      setAddressList(addresses);
+
     } catch (error) {
       console.error("Error deleting address:", error);
 
-      if (error.response?.status === 404) {
-        toast.error("Address not found or already deleted");
-
-        try {
-          const updatedAddresses = await getData("/auth/user/address");
-          setAddressList(
-            Array.isArray(updatedAddresses) ? updatedAddresses : []
-          );
-        } catch (fetchError) {
-          console.error("Error refreshing addresses:", fetchError);
-        }
-      } else {
-        toast.error("Failed to remove address. Please try again.");
-      }
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to delete address. Please try again."
+      );
     }
   };
 
-  // Order actions
-
+  // Reorder
   const handleReorder = async (orderId) => {
     try {
       const res = await axios.post(
@@ -425,7 +426,7 @@ const handleProfileUpdate = async (e) => {
 
       toast.success("Order placed again!");
 
-      setOrders(prev => [res.data.data.order, ...prev]);
+      setOrders(prev => [res.data.data, ...prev]);
 
     } catch (err) {
       console.error(err);
@@ -433,6 +434,7 @@ const handleProfileUpdate = async (e) => {
     }
   };
 
+  // confirm costomized order
   const confirmCustomOrder = async (orderId) => {
     try {
       const res = await axios.post(
@@ -451,9 +453,7 @@ const handleProfileUpdate = async (e) => {
     }
   }
 
-
-
-
+  // Delete particular order
   const deleteOrder = async (orderId) => {
     try {
       await axios.delete(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/orders/${orderId}`, {
@@ -468,30 +468,60 @@ const handleProfileUpdate = async (e) => {
     }
   };
 
-  const handleSupportSubmit = async () => {
-    if (!supportText.trim()) {
-      toast.warning("Please enter a message");
-      return;
-    }
+// Post support message
+const handleSupportSubmit = async () => {
+  if (!supportText.trim()) {
+    toast.warning("Please enter a message");
+    return;
+  }
 
+  try {
+    await axios.post(
+      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/support/support/tickets`,
+      {
+        subject: "Support Request", 
+        message: supportText,     
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    toast.success(
+      "Support message sent successfully! We'll get back to you soon."
+    );
+
+    setSupportText("");
+  } catch (error) {
+    console.error("Error sending support message:", error);
+    toast.error("Failed to send message. Please try again.");
+  }
+};
+
+//  Get support message
+useEffect(()=>{
+  const getSupportMessage = async () => {
     try {
-      console.log("Support message:", {
-        userId: user.id,
-        message: supportText.trim(),
-        timestamp: new Date().toISOString(),
-      });
+      const res = await axios.get(
+      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/support/support/tickets`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
 
-      toast.success(
-        "Support message sent successfully! We'll get back to you soon."
-      );
-      setSupportText("");
-    } catch (error) {
-      console.error("Error sending support message:", error);
-      toast.error("Failed to send message. Please try again.");
-    }
+    setMessage(res.data);
+  } catch (err) {
+    console.error("Error fetching support tickets:", err);
+  }
+};
+getSupportMessage();
+},[])
 
-  };
-
+// Profile section
   const renderProfile = () => (
     <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-lg p-6 border border-pink-100 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-3xl"></div>
@@ -524,6 +554,8 @@ const handleProfileUpdate = async (e) => {
           transition={{ duration: 0.3 }}
         >
           <div className="space-y-4">
+
+            {/* Full Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Full Name
@@ -536,12 +568,14 @@ const handleProfileUpdate = async (e) => {
                   onChange={(e) =>
                     setEditData({ ...editData, fullName: e.target.value })
                   }
-                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
-                  placeholder="Enter your full name"
+                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80"
+                  placeholder="Enter full name"
                   required
                 />
               </div>
             </div>
+
+            {/* Email (DISABLED - user cannot change) */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Email Address
@@ -551,16 +585,13 @@ const handleProfileUpdate = async (e) => {
                 <input
                   type="email"
                   value={editData.email}
-                  onChange={(e) =>
-                    setEditData({ ...editData, email: e.target.value })
-                  }
-                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
-                  placeholder="your.email@example.com"
-                  required
+                  disabled
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed"
                 />
               </div>
             </div>
 
+            {/* Mobile */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Mobile Number
@@ -573,23 +604,56 @@ const handleProfileUpdate = async (e) => {
                   onChange={(e) =>
                     setEditData({ ...editData, mobile: e.target.value })
                   }
-                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all shadow-sm"
-                  placeholder="+91 98765 43210"
+                  className="w-full pl-12 pr-4 py-3 border border-pink-200 rounded-xl bg-white/80"
+                  placeholder="Enter mobile number"
                 />
               </div>
             </div>
+
+            {/* Old Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Old Password
+              </label>
+              <input
+                type="password"
+                value={editData.oldPassword || ""}
+                onChange={(e) =>
+                  setEditData({ ...editData, oldPassword: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-pink-200 rounded-xl bg-white/80"
+                placeholder="Enter old password"
+              />
+            </div>
+
+            {/* New Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                New Password
+              </label>
+              <input
+                type="password"
+                value={editData.newPassword || ""}
+                onChange={(e) =>
+                  setEditData({ ...editData, newPassword: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-pink-200 rounded-xl bg-white/80"
+                placeholder="Enter new password"
+              />
+            </div>
+
           </div>
 
           <motion.button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:opacity-90 transition-all duration-300 mt-6"
+            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-xl shadow-lg"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <FiSave size={18} />
-            Save Changes
+            <FiSave size={18} /> Save Changes
           </motion.button>
         </motion.form>
+
       ) : (
         <motion.div
           className="relative z-10"
@@ -696,6 +760,7 @@ const handleProfileUpdate = async (e) => {
     </div>
   );
 
+// Order history section
   const renderOrders = () => (
     <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl shadow-xl p-6 border border-purple-200">
       <h2 className="text-3xl font-extrabold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-8 text-center sm:text-left">
@@ -859,95 +924,95 @@ const handleProfileUpdate = async (e) => {
     </div>
   );
 
-
+// Reorder section
   const renderReorders = () => (
-  <div className="bg-gradient-to-r from-pink-100 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
-    <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
-      Re-orders with Customization
-    </h2>
+    <div className="bg-gradient-to-r from-pink-100 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
+        Re-orders with Customization
+      </h2>
 
-    {Array.isArray(orders) && orders.length > 0 ? (
-      orders
-        .filter((o) => o.status?.toLowerCase() === "completed")
-        .map((order) => (
-          <div
-            key={order._id}
-            className="border border-pink-100 rounded-2xl p-5 mb-4 bg-white/90 shadow-sm hover:shadow-md transition"
-          >
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-gray-800">Order #{order._id}</h3>
-                <p>
-                  {order.items?.length
-                    ? order.items.map(i => i.name || i).join(", ")
-                    : order.subCategory || "No items"}
-                </p>
+      {Array.isArray(orders) && orders.length > 0 ? (
+        orders
+          .filter((o) => o.status?.toLowerCase() === "completed")
+          .map((order) => (
+            <div
+              key={order._id}
+              className="border border-pink-100 rounded-2xl p-5 mb-4 bg-white/90 shadow-sm hover:shadow-md transition"
+            >
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-gray-800">Order #{order._id}</h3>
+                  <p>
+                    {order.items?.length
+                      ? order.items.map(i => i.name || i).join(", ")
+                      : order.subCategory || "No items"}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setCustomizingOrder(
+                    customizingOrder === order._id ? null : order._id
+                  )}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg hover:opacity-90 transition"
+                >
+                  <Edit3 size={16} /> Customize
+                </button>
               </div>
 
-              <button
-                onClick={() => setCustomizingOrder(
-                  customizingOrder === order._id ? null : order._id
-                )}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg hover:opacity-90 transition"
-              >
-                <Edit3 size={16} /> Customize
-              </button>
+              {/* Customization */}
+              {customizingOrder === order._id && (
+                <div className="mt-4 p-5 bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl border border-pink-100 shadow-sm">
+                  <h4 className="font-semibold mb-3">Customize Your Order:</h4>
+
+                  <div className="space-y-2 mb-4">
+                    {[
+                      { key: "extraPages", label: "Extra Pages (+₹20)" },
+                      { key: "glossyDesigns", label: "Glossy Designs (+₹15)" },
+                      { key: "printQuality", label: "Premium Print Quality (+₹30)" },
+                    ].map(opt => (
+                      <label key={opt.key} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-purple-500 border-purple-300 rounded focus:ring-purple-400"
+                          checked={customOptions[order._id]?.[opt.key] || false}
+                          onChange={() => handleOptionChange(order._id, opt.key)}
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => confirmCustomOrder(order._id)}
+                      disabled={loading}
+                      className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:opacity-90 hover:shadow-lg transition"
+                    >
+                      {loading ? "Placing..." : "Confirm Order"}
+                    </button>
+
+                    <button
+                      onClick={() => setCustomizingOrder(null)}
+                      className="flex-1 px-1 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 font-medium shadow-sm hover:shadow-md hover:opacity-90 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+          ))
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          <FiGrid className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No completed orders available for re-ordering</p>
+        </div>
+      )}
+    </div>
+  );
 
-            {/* Customization */}
-            {customizingOrder === order._id && (
-              <div className="mt-4 p-5 bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl border border-pink-100 shadow-sm">
-                <h4 className="font-semibold mb-3">Customize Your Order:</h4>
-
-                <div className="space-y-2 mb-4">
-                  {[
-                    { key: "extraPages", label: "Extra Pages (+₹20)" },
-                    { key: "glossyDesigns", label: "Glossy Designs (+₹15)" },
-                    { key: "printQuality", label: "Premium Print Quality (+₹30)" },
-                  ].map(opt => (
-                    <label key={opt.key} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-purple-500 border-purple-300 rounded focus:ring-purple-400"
-                        checked={customOptions[order._id]?.[opt.key] || false}
-                        onChange={() => handleOptionChange(order._id, opt.key)}
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => confirmCustomOrder(order._id)}
-                    disabled={loading}
-                    className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium shadow-md hover:opacity-90 hover:shadow-lg transition"
-                  >
-                    {loading ? "Placing..." : "Confirm Order"}
-                  </button>
-
-                  <button
-                    onClick={() => setCustomizingOrder(null)}
-                    className="flex-1 px-1 py-2 rounded-xl bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 font-medium shadow-sm hover:shadow-md hover:opacity-90 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))
-    ) : (
-      <div className="text-center py-8 text-gray-500">
-        <FiGrid className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p>No completed orders available for re-ordering</p>
-      </div>
-    )}
-  </div>
-);
-
-
+// Setings section
   const renderSettings = () => {
     return (
       <div className="bg-gradient-to-br from-purple-50 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
@@ -957,10 +1022,10 @@ const handleProfileUpdate = async (e) => {
         <div className="mb-6 bg-white/80 border border-pink-100 rounded-xl p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-800 mb-3">Address</h3>
           {addressList.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-2 flex items-center">
               <li className="p-3 border rounded-lg bg-gray-50">
                 {addressList[addressList.length - 1].address}, {addressList[addressList.length - 1].city}, {addressList[addressList.length - 1].state} - {addressList[addressList.length - 1].pincode}
-
+              <button className="ml-2 p-3 bg-red-600 hover:bg-red-700 text-white rounded shadow transition" onClick={()=>{handleDeleteAddress(addressList[addressList.length - 1])}}><FiTrash2 size={18}/></button>
               </li>
             </ul>
           ) : (
@@ -1048,7 +1113,8 @@ const handleProfileUpdate = async (e) => {
     );
   };
 
-  const renderSupport = () => (
+// Support  section
+const renderSupport = () => (
     <div className="bg-gradient-to-br from-purple-50 to-purple-50 rounded-2xl shadow-lg p-6 border border-pink-100">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent mb-6">
         Support / Chat
