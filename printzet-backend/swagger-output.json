@@ -137,9 +137,6 @@
                   },
                   "mobile": {
                     "example": "any"
-                  },
-                  "email": {
-                    "example": "any"
                   }
                 }
               }
@@ -310,11 +307,14 @@
           }
         }
       },
-      "put": {
+      "patch": {
         "description": "",
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
           },
           "404": {
             "description": "Not Found"
@@ -332,13 +332,16 @@
                   "fullName": {
                     "example": "any"
                   },
-                  "email": {
-                    "example": "any"
-                  },
                   "mobile": {
                     "example": "any"
                   },
                   "address": {
+                    "example": "any"
+                  },
+                  "oldPassword": {
+                    "example": "any"
+                  },
+                  "newPassword": {
                     "example": "any"
                   }
                 }
@@ -596,6 +599,15 @@
     "/api/vendor/orders": {
       "get": {
         "description": "",
+        "parameters": [
+          {
+            "name": "showAll",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -642,7 +654,7 @@
         }
       }
     },
-    "/api/vendor/order/{orderId}/approve": {
+    "/api/vendor/order/{orderId}/confirm": {
       "patch": {
         "description": "",
         "parameters": [
@@ -840,16 +852,6 @@
         }
       }
     },
-    "/api/accessorycategories/document-printing": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/accessorycategories/clothing-printing": {
       "get": {
         "description": "",
@@ -950,7 +952,7 @@
         }
       }
     },
-    "/api/orders/upload-files": {
+    "/api/orders/upload-files-legacy": {
       "post": {
         "description": "",
         "responses": {
@@ -964,6 +966,9 @@
       "post": {
         "description": "",
         "responses": {
+          "201": {
+            "description": "Created"
+          },
           "500": {
             "description": "Internal Server Error"
           }
@@ -974,7 +979,37 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "orders": {
+                  "transactionId": {
+                    "example": "any"
+                  },
+                  "amount": {
+                    "example": "any"
+                  },
+                  "redirectUrl": {
+                    "example": "any"
+                  },
+                  "categoryId": {
+                    "example": "any"
+                  },
+                  "subCategory": {
+                    "example": "any"
+                  },
+                  "numCopies": {
+                    "example": "any"
+                  },
+                  "paperType": {
+                    "example": "any"
+                  },
+                  "binding": {
+                    "example": "any"
+                  },
+                  "lamination": {
+                    "example": "any"
+                  },
+                  "printedSides": {
+                    "example": "any"
+                  },
+                  "colorType": {
                     "example": "any"
                   },
                   "customerDetails": {
@@ -1000,26 +1035,21 @@
         }
       }
     },
-    "/api/orders/{orderId}": {
+    "/api/orders/unassigned": {
       "get": {
         "description": "",
-        "parameters": [
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/api/orders/assign/{orderId}": {
+      "post": {
         "description": "",
         "parameters": [
           {
@@ -1038,8 +1068,25 @@
           "400": {
             "description": "Bad Request"
           },
+          "404": {
+            "description": "Not Found"
+          },
           "500": {
             "description": "Internal Server Error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agentId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1197,15 +1244,45 @@
         }
       }
     },
-    "/api/orders/unassigned": {
-      "get": {
+    "/api/orders/{id}": {
+      "delete": {
         "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
           },
-          "500": {
-            "description": "Internal Server Error"
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/orders/{orderId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
@@ -1311,11 +1388,8 @@
       "get": {
         "description": "",
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
+          "default": {
+            "description": ""
           }
         }
       }
@@ -1323,6 +1397,26 @@
     "/api/admin/orders": {
       "get": {
         "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/admin/orders/{id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -1360,51 +1454,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/admin/revenue": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/admin/total-products": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/admin/top-products": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
           }
         }
       }
@@ -1471,23 +1520,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "example": "any"
-                  },
-                  "totalCost": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -1756,7 +1788,7 @@
                   "email": {
                     "example": "any"
                   },
-                  "role": {
+                  "password": {
                     "example": "any"
                   }
                 }
@@ -4069,6 +4101,9 @@
       "post": {
         "description": "",
         "responses": {
+          "201": {
+            "description": "Created"
+          },
           "500": {
             "description": "Internal Server Error"
           },
@@ -4118,7 +4153,22 @@
                   "vendorId": {
                     "example": "any"
                   },
-                  "orders": {
+                  "categoryId": {
+                    "example": "any"
+                  },
+                  "paperType": {
+                    "example": "any"
+                  },
+                  "binding": {
+                    "example": "any"
+                  },
+                  "lamination": {
+                    "example": "any"
+                  },
+                  "printedSides": {
+                    "example": "any"
+                  },
+                  "colorType": {
                     "example": "any"
                   }
                 }
@@ -4230,30 +4280,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        }
-      },
-      "delete": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "500": {
-            "description": "Internal Server Error"
           }
         }
       }
@@ -4511,7 +4537,7 @@
         }
       }
     },
-    "/order/{orderId}/approve": {
+    "/order/{orderId}/confirm": {
       "patch": {
         "description": "",
         "parameters": [
@@ -5238,9 +5264,6 @@
                   },
                   "mobile": {
                     "example": "any"
-                  },
-                  "email": {
-                    "example": "any"
                   }
                 }
               }
@@ -5351,16 +5374,6 @@
         }
       }
     },
-    "/document-printing": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/clothing-printing": {
       "get": {
         "description": "",
@@ -5457,6 +5470,72 @@
         "responses": {
           "default": {
             "description": ""
+          }
+        }
+      }
+    },
+    "/upload-files-legacy": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/unassigned": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/assign/{orderId}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "agentId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5614,28 +5693,32 @@
         }
       }
     },
-    "/unassigned": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
     "/users": {
       "get": {
         "description": "",
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
@@ -5670,51 +5753,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/revenue": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/total-products": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/top-products": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
           }
         }
       }
@@ -5781,23 +5819,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "example": "any"
-                  },
-                  "totalCost": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -6056,7 +6077,7 @@
                   "email": {
                     "example": "any"
                   },
-                  "role": {
+                  "password": {
                     "example": "any"
                   }
                 }

@@ -3,18 +3,38 @@ import Vendor from "../models/Vendor.js";
 import AccessoryOrder from "../models/AccessoryOrder.js";
 import sendResponse from "../utils/sendResponse.js";
 
+const sanitizeOrder = (order) => ({
+  orderId: order._id,
+  vendor: order.vendor,
+  status: order.status,
+  totalCost: order.totalCost,
+  vendorStatus: order.vendorStatus,
+  userId: order.userId,
+  categoryId: order.categoryId,
+  paperType: order.paperType,
+  printQuality: order.printQuality,
+  binding: order.binding,
+  lamination: order.lamination,
+  printedSides: order.printedSides,
+  files: order.files,
+  numCopies: order.numCopies,
+  colorType: order.colorType,
+  totalPages: order.totalPages,
+  refundDetails: order.refundDetails,
+  paymentMethod: order.paymentMethod,
+  transactionId: order.transactionId,
+  createdAt: order.createdAt
+});
+
 const getVendorProfile = async (req, res) => {
   try {
     const vendor = await Vendor.findById(req.vendor._id).select("-password");
     if (!vendor) {
-      // return res.status(404).json({ message: "Vendor not found" });
       return sendResponse(res,404,"error","Vendor not Found");
     }
-    // res.json({ vendor });
     sendResponse(res,200,"success","Vendor profile fetched",vendor)
   } catch (error) {
     console.error("Error fetching vendor profile:", error);
-    // res.status(500).json({ message: "Server Error" });
     sendResponse(res,500,"error","Server Error")
   }
 }
@@ -42,14 +62,9 @@ const updateVendorProfile = async (req, res) => {
       { new: true, runValidators: true }
     ).select("-password");
 
-    // res.json({
-    //   message: "Profile updated successfully",
-    //   vendor: updatedVendor,
-    // });
     sendResponse(res,200,"success","Profile updated successfully",updatedVendor)
   } catch (error) {
     console.error("Error updating vendor profile:", error);
-    // res.status(500).json({ message: "Server Error" });
     sendResponse(res,500,"error","Server Error")
   }
 }
@@ -57,20 +72,43 @@ const updateVendorProfile = async (req, res) => {
 const getVendorOrders = async (req, res) => {
   try {
     const vendorId = req.vendor._id;
+    const { showAll = false } = req.query; // Default to paid-only (YOUR task)
 
-    const orders = await Order.find({ vendor: vendorId })
-      .populate("userId categoryId")
-      .sort({ createdAt: -1 });
+    let orders;
+
+    if (showAll) {
+      // Other requirement: Show all orders (backward compatibility)
+      orders = await Order.find({ vendor: vendorId })
+        .populate("userId")
+        .sort({ createdAt: -1 });
+    } else {
+      // YOUR TASK: Show only paid orders (default behavior)
+      const Payment = (await import("../models/payment.model.js")).default;
+      const successfulPayments = await Payment.find({
+        paymentStatus: "SUCCESS"
+      }).select("orderId");
+
+      const paidOrderIds = successfulPayments.map(payment => payment.orderId);
+
+      orders = await Order.find({
+        vendor: vendorId,
+        _id: { $in: paidOrderIds }
+      })
+        .populate("userId categoryId")
+        .sort({ createdAt: -1 });
+    }
 
     const accessoryOrders = await AccessoryOrder.find({ vendor: vendorId })
       .populate("userId")
       .sort({ createdAt: -1 });
 
-    // res.json({ orders, accessoryOrders });
-    sendResponse(res,200,"success","Order fetched", { orders, accessoryOrders })
+    sendResponse(res,200,"success","Order fetched", { 
+      orders: orders.map(sanitizeOrder), 
+      accessoryOrders,
+      filter: showAll ? "all_orders" : "paid_orders_only"
+    })
   } catch (err) {
     console.error("Error fetching vendor orders:", err);
-    // res.status(500).json({ message: "Server Error" });
     sendResponse(res,500,"error","Server Error")
   }
 }
@@ -79,7 +117,6 @@ const getVendorsByPincode = async (req, res) => {
   const { pincode } = req.query;
 
   if (!pincode) {
-    // return res.status(400).json({ error: "Pincode is required" });
     return sendResponse(res, 400, "warning", "Pincode is required");
   }
 
@@ -89,17 +126,12 @@ const getVendorsByPincode = async (req, res) => {
     }).select("-password");
 
     if (!vendors || vendors.length === 0) {
-      // return res
-      //   .status(200)
-      //   .json({ message: "No vendors found for this pincode", vendors: [] });
       return sendResponse(res, 200, "info", "No vendors found for this pincode", []);
     }
 
-    // res.json({ vendors });
     sendResponse(res, 200, "success", "Vendors fetched", vendors);
   } catch (error) {
     console.error("Error fetching vendors:", error);
-    // res.status(500).json({ error: "Failed to fetch vendors" });
     sendResponse(res, 500, "error", "Failed to fetch vendors");
   }
 }
@@ -107,14 +139,13 @@ const getVendorsByPincode = async (req, res) => {
 const viewOrderDetails = async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId)
-      .populate("userId vendor categoryId");  
+      .populate("userId vendor");  
 
     if (!order) {
-      // return res.status(404).json({ message: "Order not found" });
       return sendResponse(res, 404, "error", "Order not found");
     }
     
-    return sendResponse(res, 200, "success", "Order details fetched", order);
+    return sendResponse(res, 200, "success", "Order details fetched", {order: order.map(sanitizeOrder)});
   } catch (err) {
     console.error("Error fetching order details:", err);
     return sendResponse(res, 500, "error", "Server Error");
@@ -128,16 +159,10 @@ const markOrderAsCompleted = async (req, res) => {
     const order = await Order.findById(orderId);
 
     if (!order) {
-      // return res.status(404).json({ message: "Order not found" });
       return sendResponse(res, 404, "error", "Order not found");
     }
 
     if (order.vendor.toString() !== req.vendor._id.toString()) {
-      // return res
-      //   .status(403)
-      //   .json({
-      //     message: "You are not authorized to mark this order as completed",
-      //   });
       return sendResponse(
         res,
         403,
@@ -149,48 +174,45 @@ const markOrderAsCompleted = async (req, res) => {
     order.status = "completed";
     await order.save();
 
-    // res.json({ message: "Order marked as completed", order });
-    sendResponse(res, 200, "success", "Order marked as completed", order);
+    sendResponse(res, 200, "success", "Order marked as completed", {order: order.map(sanitizeOrder)});
   } catch (err) {
     console.error("Error marking order as completed:", err);
-    // res.status(500).json({ message: "Server Error" });
     sendResponse(res, 500, "error", "Server Error");
   }
 }
 
 const approveOrder = async (req, res) => {
   try {
-    const { serviceId } = req.params;
-    const service = await Order.findById(serviceId);
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).select("vendorStatus");
     
-    if (!service) {
+    if (!order) {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    service.vendorStatus = accepted;
-    await service.save();
-
-    return sendResponse(res, 200, "Service accepted", "success", service);
+    order.vendorStatus = "confirmed";
+    await order.save();
+    return sendResponse(res, 200, "Service accepted", "success", order);
   } catch (error) {
-    console.error("Approve service error:", error);
+    console.error("Approve order error:", error);
     return sendResponse(res, 500, "Internal Server Error", "error");
   }
 }
 
 const rejectOrder = async (req, res) => {
   try {
-    const { serviceId } = req.params;
-    const service = await Order.findById(serviceId);
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId).select("vendorStatus");
     
-    if (!service) {
+    if (!order) {
       return res.status(404).json({ message: "Service not found" });
     }
     
-    service.vendorStatus = rejected;
-    await service.save();
-    return sendResponse(res, 200, "Service rejected", "success", service);
+    order.vendorStatus = "rejected";
+    await order.save();
+    return sendResponse(res, 200, "Service rejected", "success", {order});
   } catch (error) {
-    console.error("Reject service error:", error);
+    console.error("Reject order error:", error);
     return sendResponse(res, 500, "Internal Server Error", "error");
   }
 }

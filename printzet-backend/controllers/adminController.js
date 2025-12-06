@@ -4,76 +4,47 @@ import AccessoryOrder from "../models/AccessoryOrder.js"
 import authMiddleware from "../middleware/authMiddleware.js";
 import Vendor from "../models/Vendor.js";
 import sendResponse from "../utils/sendResponse.js";
-import Category from "../models/Category.js";
 
 
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find().select("-password");
-        const now = new Date();
-
-        // This Month
-        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const thisMonthEnd = now;
-
-        // Last Month
-        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-        // ---------------- Total Users (all time)
-        const totalUsers = await User.countDocuments();
-
-        // ---------------- Users Joined This Month
-        const thisMonthUsers = await User.countDocuments({
-            createdAt: { $gte: thisMonthStart, $lte: thisMonthEnd }
-        });
-
-        // ---------------- Users Joined Last Month
-        const lastMonthUsers = await User.countDocuments({
-            createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
-        });
-
-        // ---------------- % Change
-        let percentageChange = 0;
-
-        if (lastMonthUsers === 0 && thisMonthUsers > 0) {
-            percentageChange = 100;
-        } else if (lastMonthUsers > 0) {
-            percentageChange =
-                ((thisMonthUsers - lastMonthUsers) / lastMonthUsers) * 100;
-        }
-
-        return res.status(200).json({
-            success: true,
-            users,
-            totalUsers,
-            usersJoinedThisMonth: thisMonthUsers,
-            percentageChange: Number(percentageChange.toFixed(2)),
-        });
-
+        // res.json(users);
+        sendResponse(res, 200, "Users fetched successfully", "success", users);
     } catch (error) {
-        console.error("User stats error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Error fetching stats",
-            error: error.message
-        });
+        console.error("Error fetching users:", error);
+        // res.status(500).json({ message: "Error fetching users", error: error.message });
+        sendResponse(res, 500, "Error fetching users", "error", error.message);
     }
 }
 
 const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find().sort({ createdAt: -1 })
-            .populate("userId categoryId vendor");
+        // First get all successful payment records
+        const Payment = (await import("../models/payment.model.js")).default;
+        const successfulPayments = await Payment.find({
+            paymentStatus: "SUCCESS"
+        }).select("orderId");
 
+        // Extract order IDs from successful payments
+        const paidOrderIds = successfulPayments.map(payment => payment.orderId);
+
+        // Find orders that have successful payments
+        const orders = await Order.find({
+            _id: { $in: paidOrderIds }
+        }).sort({ createdAt: -1 })
+            .populate("userId categoryId vendor");
         const ordersWithCloudinaryLinks = orders.map((order) => ({
             ...order.toObject(),
             files: order.files,
         }));
+        // console.log(ordersWithCloudinaryLinks);
 
+        // res.json(ordersWithCloudinaryLinks);
         sendResponse(res, 200, "Orders fetched", "success", ordersWithCloudinaryLinks);
     } catch (error) {
         console.error("Error fetching orders:", error);
+        // res.status(500).json({ message: "Error fetching orders", error: error.message });
         sendResponse(res, 500, "Error fetching orders", "error", error.message);
     }
 }
@@ -138,29 +109,22 @@ const updateUserAddress = async (req, res) => {
 
 const getOrderById = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.orderId);
-        if (!order) return sendResponse(res, 404, "Order not found", "error");
+        const  {id}  = req.params;
+        const order = await Order.findById(id)
+            .populate("userId", "email address")
+            .populate("categoryId", "name")
+            .populate("vendor", "name email pressName");
 
-        order.status = req.body.status || order.status;
-
-        if (req.body.totalCost !== undefined) {
-            if (typeof req.body.totalCost !== "number" || req.body.totalCost < 0) {
-                // return res.status(400).json({ message: "Invalid total cost" });
-                sendResponse(res, 404, "Invalid total cost", "error")
-            }
-            order.totalCost = req.body.totalCost;
+        if (!order) {
+            return sendResponse(res, 404, "Order not found", "error", error.message);
         }
-
-        await order.save();
-
-        // res.json({ message: "Order updated", order });
-        sendResponse(res, 404, "Order not found", "error");
+        sendResponse(res, 200, "Order fetched successfully", "success", order);
     } catch (error) {
-        console.error("Error updating order:", error);
-        // res.status(500).json({ message: "Error updating order", error: error.message });
-        sendResponse(res, 500, "Error updating order", "error", error.message);
+        console.error("Error fetching order by ID:", error);
+        sendResponse(res, 500, "Error fetching order", "error", error.message);
     }
-}
+};
+
 
 const getAccessoryOrderById = async (req, res) => {
     try {
@@ -185,7 +149,7 @@ const getAccessoryOrderById = async (req, res) => {
     } catch (error) {
         console.error("Error updating accessory order:", error);
         // res.status(500).json({ message: "Error updating accessory order", error: error.message });
-        sendResponse(res, 200, "Accessory Order updated", "success", error);
+        sendResponse(res, 200, "Accessory Order updated", "success", order);
     }
 }
 
@@ -199,157 +163,6 @@ const getAllVendors = async (req, res) => {
         sendResponse(res, 500, "Failed to fetch vendors", "error", err.message);
     }
 }
-
-export const getTopProducts = async (req, res) => {
-    try {
-        const limit = Number(req.query.limit) || 4;
-
-        const topProducts = await Order.aggregate([
-            // Group subcategory stats
-            {
-                $group: {
-                    _id: "$subCategory",
-                    totalOrders: { $sum: 1 },
-                    totalRevenue: { $sum: "$totalCost" },
-                    averagePrice: { $avg: "$totalCost" },
-                    latestOrder: { $last: "$$ROOT" }
-                }
-            },
-
-            // Sort by most ordered
-            { $sort: { totalOrders: -1 } },
-
-            // Limit to top 3–4
-            { $limit: limit },
-
-            // Format data
-            {
-                $project: {
-                    _id: 0,
-                    subCategory: "$_id",
-                    totalOrders: 1,
-                    totalRevenue: 1,
-                    averagePrice: { $round: ["$averagePrice", 2] },
-                    lastOrderPrice: "$latestOrder.totalCost"
-                }
-            }
-        ]);
-
-        return sendResponse(
-            res,
-            200,
-            "Top products with user and price fetched successfully",
-            "success",
-            topProducts
-        );
-
-    } catch (error) {
-        console.error("Error fetching top products:", error);
-        return sendResponse(res, 500, "Internal Server Error", "error");
-    }
-};
-
-export const getTotalProducts = async (req, res) => {
-    try {
-        const categories = await Category.find().lean();
-
-        let totalProducts = 0;
-
-        categories.forEach(category => {
-            totalProducts += Array.isArray(category.subcategories)
-                ? category.subcategories.length
-                : 0;
-        });
-
-        return res.status(200).json({
-            success: true,
-            totalProducts,
-            message: "Total products calculated successfully."
-        });
-
-    } catch (error) {
-        console.error("Error getting total products:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
-    }
-};
-
-// revenue 
-export const getRevenue = async (req, res) => {
-    try {
-        const now = new Date();
-
-        // This Month
-        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-        // Last Month
-        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-        const filter = {
-            status: "completed",
-            transactionId: { $ne: null }
-        };
-
-        // Current month revenue
-        const currentAgg = await Order.aggregate([
-            {
-                $match: {
-                    ...filter,
-                    createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
-                }
-            },
-            { $group: { _id: null, revenue: { $sum: "$totalCost" } } }
-        ]);
-
-        const currentRevenue = Math.floor(currentAgg[0]?.revenue) || 0;
-
-        // Last month revenue
-        const lastAgg = await Order.aggregate([
-            {
-                $match: {
-                    ...filter,
-                    createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
-                }
-            },
-            { $group: { _id: null, revenue: { $sum: "$totalCost" } } }
-        ]);
-
-        const lastMonthRevenue = lastAgg[0]?.revenue || 0;
-
-        // % Change
-        let percentageChange = 0;
-
-        if (lastMonthRevenue === 0 && currentRevenue > 0) {
-            percentageChange = 100;
-        } else if (lastMonthRevenue > 0) {
-            percentageChange =
-                ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
-        }
-
-
-        return res.status(200).json({
-            success: true,
-            currentRevenue,
-            lastMonthRevenue,
-            percentageChange: Number(percentageChange.toFixed(2)),
-        });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: "Something went wrong",
-            error: error.message
-        });
-    }
-};
-
-
-
 
 export {
     getAllUsers,

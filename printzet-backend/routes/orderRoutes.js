@@ -1,32 +1,37 @@
 import express from "express";
-import orderController, { deleteOrder } from "../controllers/orderController.js";
+import orderController from "../controllers/orderController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
-import { getUnassignedOrders } from "../controllers/orderController.js";
-import {  getInvoice,
+import {
+  getInvoice,
   reOrder,
   trackOrder,
   getOrderHistory,
   getOrderDetails,
   getPaymentHistory,
   previewOrder,
-  customiseReorder
+  customiseReorder,
+  deleteOrder,
 } from "../controllers/post-order.controller.js";
+import { getUnassignedOrders } from "../controllers/orderController.js";
 import { phonePeAuthMiddleware } from "../middleware/phonepeAuthMiddleware.js";
+import { assignAgentToOrder } from "../controllers/orderAssignController.js";
 
 const router = express.Router();
 
-router.get("/history", authMiddleware, getOrderHistory); // Past orders
-router.get("/payments/history", authMiddleware, getPaymentHistory); // Past payments
+  //  CUSTOMER ORDER APIs
+router.get("/history", authMiddleware, getOrderHistory);
+router.get("/payments/history", authMiddleware, getPaymentHistory);
 
+// LEGACY Upload API
 router.post(
-  "/upload-files",
+  "/upload-files-legacy",
   authMiddleware,
-  orderController.upload_files
+  upload.array("files"),
+  orderController.upload_file_legacy
 );
 
-
-// Order creation route - using new process-first approach
+// Create Order (Payment First)
 router.post(
   "/place-order",
   authMiddleware,
@@ -34,30 +39,33 @@ router.post(
   orderController.place_order
 );
 
-// Get orders for a user
+// Get all orders of a user
 router.get("/", authMiddleware, orderController.getOrder);
 
-// Get a single order by ID
-router.get("/:orderId", authMiddleware, orderController.getSingleOrderById);
-
-router.delete('/:orderId',authMiddleware,deleteOrder);
-
-// Route to get order tracking information
-router.get("/:id/tracking", authMiddleware, trackOrder);
-
-// Route to reorder an existing order
-router.post("/:id/reorder", authMiddleware, reOrder);
-
-// Route to customise and reorder an existing order
-router.post("/:id/customise-reorder", authMiddleware, customiseReorder);
-
-// Route to preview an order before placing it
-router.get("/:id/preview-order", authMiddleware, previewOrder);
-
-// Route to get invoice for an order
-router.get("/:id/invoice", authMiddleware, getInvoice);
-
-router.get("/:id/details", authMiddleware, getOrderDetails); // Specific order
+  //  DELIVERY / ASSIGNMENT APIs 
+// Fetch all unassigned orders (Admin use)
 router.get("/unassigned", authMiddleware, getUnassignedOrders);
+
+// Assign delivery agent manually
+router.post("/assign/:orderId", authMiddleware, assignAgentToOrder);
+
+// Delivery agent: Get orders assigned to himself
+//router.get("/agent/assigned", authMiddleware, getAssignedOrders);
+
+// Delivery agent: Update status of any assigned order
+//router.patch("/agent/:id/status", authMiddleware, updateOrderStatus);
+
+
+  //  OTHER ORDER OPERATIONS
+router.get("/:id/tracking", authMiddleware, trackOrder);
+router.post("/:id/reorder", authMiddleware, reOrder);
+router.post("/:id/customise-reorder", authMiddleware, customiseReorder);
+router.get("/:id/preview-order", authMiddleware, previewOrder);
+router.get("/:id/invoice", authMiddleware, getInvoice);
+router.get("/:id/details", authMiddleware, getOrderDetails);
+router.delete("/:id",authMiddleware,deleteOrder);
+
+// MUST BE LAST (dynamic route)
+router.get("/:orderId", authMiddleware, orderController.getSingleOrderById);
 
 export default router;

@@ -1,10 +1,8 @@
 import express from "express";
-import { getDocumentCategory, getClothingCategory, getContactCardCategories, getCustomDrinkwareCategories, getLabelStickerPackagingCategories, getMugsAlbumGiftCategories, getPosterSignsCategories, getStampInkCategories, getStationeryCategories } from "../controllers/accessoryController.js";
+import { getClothingCategory, getContactCardCategories, getCustomDrinkwareCategories, getLabelStickerPackagingCategories, getMugsAlbumGiftCategories, getPosterSignsCategories, getStampInkCategories, getStationeryCategories } from "../controllers/accessoryController.js";
 
 const router = express.Router();
 
-// Fetch accessory category and its subcategories
-router.get("/document-printing", getDocumentCategory);
 router.get("/clothing-printing", getClothingCategory);
 router.get("/stationery-printing", getStationeryCategories);
 router.get("/stamps-printing", getStampInkCategories);

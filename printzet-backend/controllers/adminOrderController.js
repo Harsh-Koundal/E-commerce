@@ -4,7 +4,20 @@ import sendResponse from "../utils/sendResponse.js";
 
 export const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate("user", "name email");
+    // First get all successful payment records
+    const Payment = (await import("../models/payment.model.js")).default;
+    const successfulPayments = await Payment.find({ 
+      paymentStatus: "SUCCESS" 
+    }).select("orderId");
+    
+    // Extract order IDs from successful payments
+    const paidOrderIds = successfulPayments.map(payment => payment.orderId);
+    
+    // Find orders that have successful payments
+    const orders = await Order.find({ 
+      _id: { $in: paidOrderIds }
+    }).populate("user", "name email");
+    
     return sendResponse(res, 200, "Orders fetched successfully", "success", orders);
   } catch (error) {
     return sendResponse(res, 500, "Failed to fetch orders", "error", {error: error.message});

@@ -9,6 +9,17 @@ const trackOrder = async (req, res) => {
         if (!order) {
             return res.status(404).json("Order not found");
         }
+        
+        // Check if the order has a successful payment
+        const payment = await Payment.findOne({ 
+            orderId: order._id, 
+            paymentStatus: "SUCCESS" 
+        });
+        
+        if (!payment) {
+            return res.status(404).json("Order not found or payment not completed");
+        }
+        
         return res.status(200).json({ message:"Fetched order Status",status: order.status});
     } catch (error) {
         console.error("Error tracking order:", error);
@@ -21,6 +32,16 @@ const reOrder = async (req, res) => {
         const oldOrder = await Order.findById(req.params.id);
         if (!oldOrder) {
             return res.status(404).json({ message: "Original order not found" });
+        }
+        
+        // Check if the original order has a successful payment
+        const payment = await Payment.findOne({ 
+            orderId: oldOrder._id, 
+            paymentStatus: "SUCCESS" 
+        });
+        
+        if (!payment) {
+            return res.status(404).json({ message: "Original order not found or payment not completed" });
         }
 
         const clonedOrderData = oldOrder.toObject();
@@ -35,7 +56,7 @@ const reOrder = async (req, res) => {
         const newOrder = new Order(clonedOrderData);
         await newOrder.save();
 
-        return res.status(201).json({ message: "Reorder placed",data:{order:newOrder}});
+        return res.status(201).json({ message: "Reorder placed", order: newOrder });
 
     } catch (error) {
         console.error("Error while reordering:", error)
@@ -48,6 +69,16 @@ const customiseReorder = async (req, res) => {
         const oldOrder = await Order.findById(req.params.id);
         if (!oldOrder) {
             return res.status(404).json({ message: "Original order not found" });
+        }
+        
+        // Check if the original order has a successful payment
+        const payment = await Payment.findOne({ 
+            orderId: oldOrder._id, 
+            paymentStatus: "SUCCESS" 
+        });
+        
+        if (!payment) {
+            return res.status(404).json({ message: "Original order not found or payment not completed" });
         }
 
         const updates = req.body;
@@ -89,6 +120,17 @@ const previewOrder = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
         } 
+        
+        // Check if the order has a successful payment
+        const payment = await Payment.findOne({ 
+            orderId: order._id, 
+            paymentStatus: "SUCCESS" 
+        });
+        
+        if (!payment) {
+            return res.status(404).json({ message: "Order not found or payment not completed" });
+        }
+        
         return res.status(200).json({ message: "Order preview", order });
 
     } catch (error) {
@@ -101,6 +143,16 @@ const getInvoice = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate("userId vendor");
     if (!order) return res.status(404).json({ message: "Order not found" });
+    
+    // Check if the order has a successful payment
+    const payment = await Payment.findOne({ 
+      orderId: order._id, 
+      paymentStatus: "SUCCESS" 
+    });
+    
+    if (!payment) {
+      return res.status(404).json({ message: "Order not found or payment not completed" });
+    }
 
     const invoice = {
       invoiceId: `INV-${order.orderId}`,
@@ -134,8 +186,26 @@ const getInvoice = async (req, res) => {
 // Get user order history
 const getOrderHistory = async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.userId })
-      .populate("vendor")
+    // Get the correct user ID (handle both regular and Google auth)
+    const userId = req.userId || req.user?.id;
+    
+    // First get all successful payment records for this user
+    const successfulPayments = await Payment.find({ 
+      userId: userId, 
+      paymentStatus: "SUCCESS" 
+    }).select("orderId");
+    
+    // Extract order IDs from successful payments
+    const paidOrderIds = successfulPayments.map(payment => payment.orderId);
+    
+    // Find orders that have successful payments
+    const orders = await Order.find({ 
+      userId: userId,
+      _id: { $in: paidOrderIds }
+    })
+      .populate("categoryId", "name description")
+      .populate("vendor", "name email phone address")
+      .populate("assignedAgent", "name phone")
       .sort({ createdAt: -1 });
 
     return sendResponse(res, 200,  "Order history fetched","success", orders);
@@ -148,10 +218,25 @@ const getOrderHistory = async (req, res) => {
 // Get order details
 const getOrderDetails = async (req, res) => {
   try {
-    const order = await Order.findOne({ _id: req.params.id, userId: req.userId })
-      .populate("vendor");
+    // Get the correct user ID (handle both regular and Google auth)
+    const userId = req.userId || req.user?.id;
+    
+    const order = await Order.findOne({ _id: req.params.id, userId: userId })
+      .populate("categoryId", "name description")
+      .populate("vendor", "name email phone address")
+      .populate("assignedAgent", "name phone");
 
     if (!order) return sendResponse(res, 404, "error", "Order not found");
+    
+    // Check if the order has a successful payment
+    const payment = await Payment.findOne({ 
+      orderId: order._id, 
+      paymentStatus: "SUCCESS" 
+    });
+    
+    if (!payment) {
+      return sendResponse(res, 404, "error", "Order not found or payment not completed");
+    }
 
     return sendResponse(res, 200,  "Order details fetched","success", order);
   } catch (error) {
@@ -163,7 +248,10 @@ const getOrderDetails = async (req, res) => {
 // Get payment history
 const getPaymentHistory = async (req, res) => {
   try {
-    const payments = await Payment.find({ userId: req.userId })
+    // Get the correct user ID (handle both regular and Google auth)
+    const userId = req.userId || req.user?.id;
+    
+    const payments = await Payment.find({ userId: userId })
       .populate("orderId")
       .sort({ createdAt: -1 });
 
@@ -174,10 +262,31 @@ const getPaymentHistory = async (req, res) => {
   }
 };
 
+const deleteOrder = async(req,res,next)=>{
+  try{
+    const orderId = req.params.id;
+    const order = await Order.findById(orderId);
+    if(!order) return res.status(404).json({message:"Order not found"});
+
+    const payment = await Payment.findOne({
+      orderId:order._id,
+      paymentStatus:"SUCCESS"
+    });
+
+    if(!payment) return res.status(404).json({message:"Cannot delete order. Payment not completed or order invalid."});
+
+    await Order.findByIdAndDelete(orderId);
+    res.status(200).json({message:"Order deleted successfully"});
+  }catch(err){
+    console.error("Error deleting order:", err);
+    return sendResponse(res, 500, "Server error while deleting order");
+  }
+}
+
 
 
 export {
     trackOrder, reOrder, getInvoice,
     getOrderHistory, getOrderDetails, getPaymentHistory,customiseReorder
-    ,previewOrder
+    ,previewOrder,deleteOrder
 }
